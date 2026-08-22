@@ -1,0 +1,57 @@
+# ============================================================
+# CreditSmart — Apache (Laragon / XAMPP / WAMP)
+#
+# La app usa rutas limpias con History API (/simulador, /solicitar).
+# Sin esta reescritura, recargar en /simulador devuelve 404 de Apache
+# porque no existe ese archivo en disco.
+# ============================================================
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Detecta automáticamente el directorio de despliegue
+  # (raíz del vhost o subcarpeta como /crediSmart/).
+  RewriteBase /
+
+  # No reescribas archivos ni directorios que existen de verdad
+  # (assets, src, manifest.json...).
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Todo lo demás lo resuelve el router del cliente.
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# ---------- Tipos MIME (módulos ES) ----------
+<IfModule mod_mime.c>
+  AddType text/javascript .js
+  AddType text/css .css
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
+# ---------- Compresión ----------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json
+</IfModule>
+
+# ---------- Caché de estáticos ----------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType text/javascript "access plus 7 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  # El HTML nunca se cachea: es el que arranca los módulos.
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# ---------- Cabeceras de seguridad básicas ----------
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# No listar directorios.
+Options -Indexes

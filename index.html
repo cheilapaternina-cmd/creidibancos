@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CreditSmart</title>
+
+  <meta name="description" content="Consulta, simula y solicita créditos de forma rápida, segura y 100% en línea." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="CreditSmart" />
+  <meta name="theme-color" content="#1d4ed8" />
+
+  <link rel="icon" type="image/png" href="https://media.base44.com/images/public/6a7d2f90c3c6cae43f73f77b/b344403c4_logo.png" />
+  <link rel="manifest" href="./manifest.json" />
+
+  <!-- Capa de estilos: cascada explícita (reset -> tokens -> base -> layout -> componentes -> páginas -> responsive) -->
+  <link rel="stylesheet" href="./assets/css/01-reset.css" />
+  <link rel="stylesheet" href="./assets/css/02-tokens.css" />
+  <link rel="stylesheet" href="./assets/css/03-base.css" />
+  <link rel="stylesheet" href="./assets/css/04-layout.css" />
+  <link rel="stylesheet" href="./assets/css/05-components.css" />
+  <link rel="stylesheet" href="./assets/css/06-pages.css" />
+  <link rel="stylesheet" href="./assets/css/07-responsive.css" />
+</head>
+<body>
+  <!-- Punto de montaje único (Composition Root de la capa de presentación) -->
+  <div id="root">
+    <div class="app-boot">
+      <div class="spinner" role="status" aria-label="Cargando"></div>
+    </div>
+  </div>
+
+  <!-- Región viva para notificaciones accesibles (puerto INotifier) -->
+  <div id="notifications" class="notifications" aria-live="polite" aria-atomic="false"></div>
+
+  <noscript>
+    <div class="noscript">
+      <strong>CreditSmart</strong>
+      <p>Esta aplicación requiere JavaScript habilitado para funcionar.</p>
+    </div>
+  </noscript>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

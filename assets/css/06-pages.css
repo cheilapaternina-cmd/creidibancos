@@ -1,0 +1,282 @@
+/* ============================================================
+   06-pages.css — Estilos específicos por vista
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Catálogo (/) — Hero
+   ------------------------------------------------------------ */
+.hero {
+  background-image: linear-gradient(
+    to bottom right,
+    var(--color-blue-700),
+    var(--color-blue-800) 50%,
+    var(--color-blue-900)
+  );
+  color: var(--color-white);
+  padding: var(--space-16) var(--space-4);
+}
+
+.hero__inner {
+  max-width: var(--container-4xl);
+  margin-inline: auto;
+  text-align: center;
+}
+
+.hero__title {
+  font-size: var(--text-4xl);
+  line-height: 1.15;
+  font-weight: var(--fw-black);
+  margin-bottom: var(--space-4);
+}
+
+.hero__title-accent {
+  color: var(--color-emerald-400);
+}
+
+.hero__subtitle {
+  color: var(--color-blue-200);
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  max-width: var(--container-2xl);
+  margin-inline: auto;
+  margin-bottom: var(--space-8);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+/* ------------------------------------------------------------
+   Simulador (/simulador)
+   ------------------------------------------------------------ */
+.filters__grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.filters__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.results-count {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.results-count strong {
+  color: var(--text-strong);
+  font-weight: var(--fw-bold);
+}
+
+/* ------------------------------------------------------------
+   Solicitud (/solicitar)
+   ------------------------------------------------------------ */
+.form-page {
+  max-width: var(--container-3xl);
+  margin-inline: auto;
+  padding: var(--space-10) var(--space-4);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.form__section {
+  background-color: var(--surface);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+}
+
+.form__section-icon--personal { color: var(--brand); }
+.form__section-icon--credit   { color: var(--color-emerald-600); }
+.form__section-icon--work     { color: var(--color-violet-600); }
+
+/* ------------------------------------------------------------
+   404 — Página no encontrada (estilo de sistema, paleta slate)
+   ------------------------------------------------------------ */
+.sys-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background-color: var(--color-slate-50);
+}
+
+.sys-page__inner {
+  max-width: var(--container-md);
+  width: 100%;
+}
+
+.sys-block {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.sys-code {
+  font-size: var(--text-7xl);
+  line-height: var(--leading-7xl);
+  font-weight: 300;
+  color: var(--color-slate-300);
+}
+
+.sys-rule {
+  height: 2px;
+  width: 4rem;
+  background-color: var(--color-slate-200);
+  margin-inline: auto;
+}
+
+.sys-title {
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  font-weight: var(--fw-medium);
+  color: var(--color-slate-800);
+}
+
+.sys-text {
+  color: var(--color-slate-600);
+  line-height: 1.625;
+}
+
+.sys-text__highlight {
+  font-weight: var(--fw-medium);
+  color: var(--color-slate-700);
+}
+
+.sys-note {
+  margin-top: var(--space-8);
+  padding: var(--space-4);
+  background-color: var(--color-slate-100);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-slate-200);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  text-align: left;
+}
+
+.sys-note__dot {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-orange-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.125rem;
+}
+
+.sys-note__dot::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-orange-400);
+}
+
+.sys-note__title {
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-slate-700);
+}
+
+.sys-note__text {
+  font-size: var(--text-sm);
+  color: var(--color-slate-600);
+  line-height: 1.625;
+}
+
+.sys-actions {
+  padding-top: var(--space-6);
+}
+
+/* ------------------------------------------------------------
+   Acceso restringido (pantalla de sistema)
+   ------------------------------------------------------------ */
+.access-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-image: linear-gradient(to bottom, var(--color-white), var(--color-slate-50));
+}
+
+.access-card {
+  max-width: var(--container-md);
+  width: 100%;
+  padding: var(--space-8);
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-slate-100);
+  text-align: center;
+}
+
+.access-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius-full);
+  background-color: var(--color-orange-100);
+}
+
+.access-card__icon svg {
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-orange-600);
+  stroke: currentColor;
+  fill: none;
+}
+
+.access-card__title {
+  font-size: var(--text-3xl);
+  line-height: var(--leading-3xl);
+  font-weight: var(--fw-bold);
+  color: var(--color-slate-900);
+  margin-bottom: var(--space-4);
+}
+
+.access-card__text {
+  color: var(--color-slate-600);
+  margin-bottom: var(--space-8);
+}
+
+.access-card__help {
+  padding: var(--space-4);
+  background-color: var(--color-slate-50);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-slate-600);
+  text-align: left;
+}
+
+.access-card__help ul {
+  list-style: disc;
+  list-style-position: inside;
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

@@ -1,0 +1,211 @@
+/* ============================================================
+   02-tokens.css — Design tokens (paleta, tipografía, radios,
+   sombras, espaciado y breakpoints). Única fuente de verdad
+   visual: los componentes solo consumen variables.
+   ============================================================ */
+
+:root {
+  /* ---------- Tipografía ---------- */
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading: var(--font-body);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  --text-xs: 0.75rem;      --leading-xs: 1rem;
+  --text-sm: 0.875rem;     --leading-sm: 1.25rem;
+  --text-base: 1rem;       --leading-base: 1.5rem;
+  --text-lg: 1.125rem;     --leading-lg: 1.75rem;
+  --text-xl: 1.25rem;      --leading-xl: 1.75rem;
+  --text-2xl: 1.5rem;      --leading-2xl: 2rem;
+  --text-3xl: 1.875rem;    --leading-3xl: 2.25rem;
+  --text-4xl: 2.25rem;     --leading-4xl: 2.5rem;
+  --text-5xl: 3rem;        --leading-5xl: 1;
+  --text-7xl: 4.5rem;      --leading-7xl: 1;
+
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 900;
+
+  /* ---------- Gris ---------- */
+  --color-gray-50:  #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* ---------- Slate (páginas de sistema: 404 / acceso) ---------- */
+  --color-slate-50:  #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+
+  /* ---------- Azul (marca primaria) ---------- */
+  --color-blue-50:  #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+
+  /* ---------- Esmeralda (acento) ---------- */
+  --color-emerald-100: #d1fae5;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+
+  /* ---------- Violeta ---------- */
+  --color-violet-100: #ede9fe;
+  --color-violet-500: #8b5cf6;
+  --color-violet-600: #7c3aed;
+  --color-violet-700: #6d28d9;
+
+  /* ---------- Ámbar ---------- */
+  --color-amber-50:  #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+
+  /* ---------- Rosa ---------- */
+  --color-rose-100: #ffe4e6;
+  --color-rose-500: #f43f5e;
+  --color-rose-700: #be123c;
+
+  /* ---------- Verde azulado (sexto tema de producto) ---------- */
+  --color-teal-100: #ccfbf1;
+  --color-teal-500: #14b8a6;
+  --color-teal-600: #0d9488;
+  --color-teal-700: #0f766e;
+
+  /* ---------- Naranja / Rojo (estados) ---------- */
+  --color-orange-100: #ffedd5;
+  --color-orange-400: #fb923c;
+  --color-orange-600: #ea580c;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+
+  --color-white: #ffffff;
+
+  /* ---------- Alias semánticos ---------- */
+  --page-bg: var(--color-gray-50);
+  --surface: var(--color-white);
+  --surface-border: var(--color-gray-100);
+  --text-strong: var(--color-gray-800);
+  --text-body: var(--color-gray-600);
+  --text-muted: var(--color-gray-500);
+  --text-faint: var(--color-gray-400);
+  --brand: var(--color-blue-700);
+  --brand-hover: var(--color-blue-800);
+  --brand-soft: var(--color-blue-50);
+  --accent: var(--color-emerald-500);
+  --accent-hover: var(--color-emerald-400);
+  --focus-ring: var(--color-blue-400);
+  --required: var(--color-red-500);
+
+  /* ---------- Radios ---------- */
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+
+  /* ---------- Sombras ---------- */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* ---------- Anchos de contenedor ---------- */
+  --container-md: 28rem;   /* max-w-md  */
+  --container-2xl: 42rem;  /* max-w-2xl */
+  --container-3xl: 48rem;  /* max-w-3xl */
+  --container-4xl: 56rem;  /* max-w-4xl */
+  --container-7xl: 80rem;  /* max-w-7xl */
+
+  /* ---------- Espaciado ---------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+
+  /* ---------- Motion ---------- */
+  --transition-fast: 150ms;
+  --transition-base: 200ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- Z-index ---------- */
+  --z-nav: 50;
+  --z-toast: 100;
+}
+
+/* ---------- Temas de producto (gradiente + badge) ----------
+   Mapeo 1:1 con el catálogo original:
+   blue / emerald / violet / amber / rose
+   más `teal`, añadido para el sexto producto (Crédito de Libranza)  */
+
+.theme-blue {
+  --product-grad-from: var(--color-blue-500);
+  --product-grad-to: var(--color-blue-700);
+  --product-badge-bg: var(--color-blue-100);
+  --product-badge-fg: var(--color-blue-700);
+}
+
+.theme-emerald {
+  --product-grad-from: var(--color-emerald-500);
+  --product-grad-to: var(--color-emerald-700);
+  --product-badge-bg: var(--color-emerald-100);
+  --product-badge-fg: var(--color-emerald-700);
+}
+
+.theme-violet {
+  --product-grad-from: var(--color-violet-500);
+  --product-grad-to: var(--color-violet-700);
+  --product-badge-bg: var(--color-violet-100);
+  --product-badge-fg: var(--color-violet-700);
+}
+
+.theme-amber {
+  --product-grad-from: var(--color-amber-500);
+  --product-grad-to: var(--color-amber-600);
+  --product-badge-bg: var(--color-amber-100);
+  --product-badge-fg: var(--color-amber-700);
+}
+
+.theme-rose {
+  --product-grad-from: var(--color-rose-500);
+  --product-grad-to: var(--color-rose-700);
+  --product-badge-bg: var(--color-rose-100);
+  --product-badge-fg: var(--color-rose-700);
+}
+
+.theme-teal {
+  --product-grad-from: var(--color-teal-500);
+  --product-grad-to: var(--color-teal-700);
+  --product-badge-bg: var(--color-teal-100);
+  --product-badge-fg: var(--color-teal-700);
+}

@@ -1,0 +1,21 @@
+{
+  "name": "CreditSmart — FinTech Solutions",
+  "short_name": "CreditSmart",
+  "description": "Consulta, simula y solicita créditos de forma rápida, segura y 100% en línea.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f9fafb",
+  "theme_color": "#1d4ed8",
+  "lang": "es",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/6a7d2f90c3c6cae43f73f77b/b344403c4_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

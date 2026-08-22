@@ -1,0 +1,98 @@
+/* ============================================================
+   04-layout.css — Estructura de página, contenedores y grids
+   ============================================================ */
+
+.page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--page-bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* El contenido empuja el footer al final */
+.page > .page__main {
+  flex: 1 1 auto;
+}
+
+/* ---------- Contenedores ---------- */
+.container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+}
+
+.container--md  { max-width: var(--container-md); }
+.container--2xl { max-width: var(--container-2xl); }
+.container--3xl { max-width: var(--container-3xl); }
+.container--4xl { max-width: var(--container-4xl); }
+.container--7xl { max-width: var(--container-7xl); }
+
+/* ---------- Secciones ---------- */
+.section {
+  padding-block: var(--space-10);
+}
+
+.section--catalog {
+  padding-block: var(--space-14);
+}
+
+.section__title {
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--text-strong);
+  margin-bottom: var(--space-2);
+}
+
+.section__title--page {
+  font-size: var(--text-3xl);
+  line-height: var(--leading-3xl);
+  font-weight: var(--fw-black);
+  margin-bottom: var(--space-1);
+}
+
+.section__subtitle {
+  color: var(--text-muted);
+  margin-bottom: var(--space-8);
+}
+
+/* ---------- Grid de productos ---------- */
+.grid-products {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+/* ---------- Grid de formulario ---------- */
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.grid-form__full {
+  grid-column: 1 / -1;
+}
+
+/* ---------- Stacks ---------- */
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack--gap-1 { gap: var(--space-1); }
+.stack--gap-3 { gap: var(--space-3); }
+.stack--gap-6 { gap: var(--space-6); }
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.row--between { justify-content: space-between; }
+.row--center { justify-content: center; }
+.row--wrap { flex-wrap: wrap; }
+.row--gap-2 { gap: var(--space-2); }
+.row--gap-3 { gap: var(--space-3); }
+.row--gap-4 { gap: var(--space-4); }

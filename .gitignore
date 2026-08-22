@@ -1,0 +1,19 @@
+# Dependencias de PRUEBAS únicamente (jsdom, para tests/03-boot-jsdom.mjs).
+# La aplicación en sí no tiene dependencias de runtime: se sirve tal cual.
+node_modules/
+package-lock.json
+
+# Sistema operativo / editores
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs y temporales
+*.log
+*.tmp
+
+#CL
+/.claude/
