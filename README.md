@@ -67,7 +67,7 @@ se reconstruyó su contenido literal:
 | Original                                                          | Aquí                                             |
 | ----------------------------------------------------------------- | ------------------------------------------------ |
 | Ruta `/` — Catálogo                                               | `CatalogView` + `CatalogController`              |
-| Ruta `/simulador` — Simulador                                     | `SimulatorView` + `SimulatorController`          |
+| Ruta `/simulador` — Simulador                                     | `SimulatorView` + `SimulatorController` (aquí sí calcula) |
 | Ruta `/solicitar` — Solicitud                                     | `ApplicationView` + `ApplicationController`      |
 | Ruta `*` — 404 (paleta slate, "Go Home")                          | `NotFoundView` + `NotFoundController`            |
 | Pantalla de sistema "Access Restricted"                           | `AccessRestrictedView`                           |
@@ -82,7 +82,7 @@ se reconstruyó su contenido literal:
 | Footer (dos variantes de margen y texto)                          | `FooterComponent`                                |
 | Paleta Tailwind completa usada en el diseño                       | `assets/css/02-tokens.css`                       |
 
-**Diferencias deliberadas** (dos, ambas señaladas aquí):
+**Diferencias deliberadas** (tres, todas señaladas aquí):
 
 1. En el original los filtros del simulador eran decorativos ("La búsqueda y
    filtros son solo visuales en esta actividad"). Aquí **funcionan**: la
@@ -95,6 +95,10 @@ se reconstruyó su contenido literal:
    campos, aplica la política de dominio (monto y plazo dentro de lo que
    permite el producto elegido), estima la cuota mensual y radica la solicitud
    con número de referencia. La nota al pie se ajustó en consecuencia.
+3. En el original la página `/simulador` **no simulaba**: era un filtro del
+   catálogo con el título "Simulador de Crédito" encima. Aquí calcula de verdad
+   —cuota mensual, total de intereses, total a pagar y tabla de amortización por
+   el sistema francés— y el filtro del catálogo se conserva debajo, separado.
 
 Todo lo demás —textos, placeholders, emojis, tipos de campo, orden, colores,
 sombras, radios, breakpoints— es idéntico.
@@ -116,7 +120,8 @@ crediSmart/
 │   ├── 03-base.css                Elementos base y utilidades tipográficas
 │   ├── 04-layout.css              Contenedores, secciones, grids
 │   ├── 05-components.css          Navbar, botones, cards, formularios, toasts
-│   ├── 06-pages.css               Hero, simulador, formulario, 404, acceso
+│   ├── 06-pages.css               Hero, simulador (cálculo, resultado,
+│   │                              amortización), formulario, 404, acceso
 │   └── 07-responsive.css          Breakpoints sm/lg + print
 │
 └── src/
@@ -134,9 +139,10 @@ crediSmart/
     │   ├── entities/              CreditProduct · CreditApplication
     │   ├── valueobjects/          Money · InterestRate · Term · AmountRange
     │   │                          ProductTheme · Applicant · RequestedCredit
-    │   │                          EmploymentInfo
+    │   │                          EmploymentInfo · Installment
+    │   │                          AmortizationPlan
     │   ├── criteria/              ProductSearchCriteria (Specification)
-    │   ├── services/              CreditApplicationPolicy (reglas cruzadas)
+    │   ├── services/              CreditApplicationPolicy · CreditSimulationService
     │   └── errors/                DomainError · ValidationError
     │                              NotImplementedError · ContractViolationError
     │
@@ -144,9 +150,10 @@ crediSmart/
     │   ├── contracts/             IUseCase · ILogger · INotifier
     │   ├── usecases/              ListCreditProducts · SearchCreditProducts
     │   │                          GetAmountRangeFilters · GetCreditProductNames
-    │   │                          SubmitCreditApplication
+    │   │                          SimulateCredit · SubmitCreditApplication
     │   ├── mappers/               CreditProductMapper · CreditApplicationMapper
-    │   ├── dto/                   CreditProductDTO
+    │   │                          SimulationMapper
+    │   ├── dto/                   CreditProductDTO · SimulationDTO
     │   └── shared/                Result (éxito/fallo explícito)
     │
     ├── infrastructure/            ◄── ADAPTADORES. Implementan los puertos
@@ -321,7 +328,7 @@ transpilador. El navegador carga `src/main.js` y este importa el resto.
 
 ## 6. Verificación realizada
 
-Las tres suites viven en `tests/` y se ejecutan con Node — **146 aserciones**,
+Las tres suites viven en `tests/` y se ejecutan con Node — **240 aserciones**,
 todas en verde. Detalle completo en
 [`docs/19-pruebas-y-verificacion.md`](./docs/19-pruebas-y-verificacion.md).
 
@@ -339,18 +346,24 @@ Qué cubre cada una:
   `$ 1.000.000`, normalización sin acentos, búsqueda por texto, filtro por los
   5 rangos, formulario vacío → 11 errores de campo, solicitud válida → radicado
   `CS-XXXXXXXX` + cuota estimada, monto fuera de rango → rechazado por
-  `CreditApplicationPolicy`. **Todo OK.**
+  `CreditApplicationPolicy`; y la simulación: $10.000.000 a 36 meses al 18,5 %
+  E.A. → cuota exacta de **$357.000**, el capital cuadra al peso y el saldo cierra
+  en cero también a 240 meses. **Todo OK.**
 - **Presentación** — HTML balanceado en las 5 vistas, textos y placeholders
   literales, variante compacta del simulador sin requisitos ni "Ver detalles",
   `<script>` en un campo → escapado, `href` con prefijo de despliegue,
   `ContractViolationError` ante un controlador incompleto, detección de
   dependencia circular en el contenedor. **Todo OK.**
 - **Arranque real en DOM (jsdom, sobre el `index.html` de verdad)** — el grafo
-  completo se resuelve (32 dependencias), `basePath` se autodetecta como
+  completo se resuelve (34 dependencias), `basePath` se autodetecta como
   `/crediSmart/`, el catálogo pinta 6 tarjetas, el título del documento cambia
   por ruta, un clic en un enlace navega sin recarga, la búsqueda en vivo filtra
   a 1 resultado conservando el foco en el input, el filtro por rango deja 3,
-  "Limpiar" restaura 5, el formulario vacío marca 11 campos inválidos y muestra
+  "Limpiar" restaura 5, el simulador arranca con una cuota ya calculada y la
+  recalcula al teclear ($ 91.250 → $ 912.498) sin perder el foco, un monto fuera
+  de rango marca el campo conservando la cifra anterior, la tabla de amortización
+  se despliega y su última fila deja el saldo en $ 0, el formulario vacío marca
+  11 campos inválidos y muestra
   el toast de error, el envío válido radica la solicitud (`CS-XXXXXXXX`), la
   persiste en `localStorage` y muestra el toast de éxito, una ruta inexistente
   pinta el 404 con la ruta pedida, y el regreso a `/` restaura el hero.
@@ -387,9 +400,9 @@ docs/
 ├── 05-principios-solid.md                     Los 5, con el código real
 ├── 06-contratos-e-interfaces.md               Los 12 contratos y su verificación
 ├── 07-entidades.md                            CreditProduct · CreditApplication
-├── 08-value-objects.md                        Los 8 value objects
+├── 08-value-objects.md                        Los 10 value objects
 ├── 09-dominio-servicios-criterios-errores.md  Policy · Specification · errores
-├── 10-casos-de-uso-y-dtos.md                  Los 5 casos de uso · Result · mappers
+├── 10-casos-de-uso-y-dtos.md                  Los 6 casos de uso · Result · mappers
 ├── 11-adaptadores-de-infraestructura.md       Los 10 adaptadores
 ├── 12-vistas-controladores-componentes.md     Referencia de presentación
 ├── 13-inyeccion-de-dependencias.md            Container · Composition Root · grafo

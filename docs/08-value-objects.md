@@ -37,7 +37,7 @@ rechaza rangos invertidos, `InterestRate` rechaza valores fuera de [0,100] y
 4. **Sin identidad.** No tiene `id`. Dos importes de $5.000.000 son el mismo
    importe.
 
-## 8.3 Los 8 value objects
+## 8.3 Los 10 value objects
 
 | Value object | Encapsula | Invariantes que garantiza |
 |---|---|---|
@@ -49,6 +49,8 @@ rechaza rangos invertidos, `InterestRate` rechaza valores fuera de [0,100] y
 | `Applicant` | Datos personales | Nombre ≥5 caracteres, cédula 6–12 dígitos, email con formato, teléfono 7–15 dígitos |
 | `RequestedCredit` | Datos del crédito pedido | Tipo seleccionado, monto >0, plazo entero >0, destino ≥10 caracteres |
 | `EmploymentInfo` | Datos laborales | Empresa y cargo no vacíos, ingresos >0 |
+| `Installment` | Una fila de la amortización | Nº entero >0; los cuatro importes son `Money`; `cuota = interés + capital` |
+| `AmortizationPlan` | El plan de pagos completo | Una cuota por mes, numeradas 1..n; la suma de capital es el capital prestado; la última cuota deja saldo 0 |
 
 ---
 
@@ -401,7 +403,107 @@ Cambiar del 40 % al 35 % es cambiar un número en un archivo.
 
 ---
 
-## 8.10 Los 11 errores de campo posibles
+## 8.10 Los dos value objects de la simulación
+
+Los produce `CreditSimulationService` (ver
+[09 §9.2](./09-dominio-servicios-criterios-errores.md)) y viajan a la vista
+convertidos en `SimulationDTO`. Son value objects y no entidades porque **no
+tienen identidad ni ciclo de vida**: el mismo capital, la misma tasa y el mismo
+plazo producen siempre el mismo plan. No se persisten; se recalculan.
+
+### `Installment` — una fila de la tabla
+
+`src/domain/valueobjects/Installment.js`
+
+| Campo | Tipo | Qué es |
+|---|---|---|
+| `number` | `number` | Nº de período, desde 1 |
+| `payment` | `Money` | Lo que se paga ese mes |
+| `interest` | `Money` | Parte que se va en intereses |
+| `principal` | `Money` | Parte que abona capital |
+| `remainingBalance` | `Money` | Saldo vivo tras pagar |
+
+La invariante que justifica que esto sea una clase y no un objeto plano:
+
+```js
+if (payment.amount !== interest.amount + principal.amount) {
+  throw new DomainError('La cuota debe ser exactamente interés más capital.', {
+    code: 'INSTALLMENT_NOT_BALANCED',
+    details: { number, payment: payment.amount, interest: interest.amount,
+               principal: principal.amount },
+  });
+}
+```
+
+Un redondeo mal hecho revienta **al construir la fila**, no tres capas más
+adelante cuando el usuario ve una tabla que no suma.
+
+También expone `settlesDebt`, que responde "¿con esta cuota queda saldado el
+crédito?" sin que nadie tenga que comparar el saldo contra cero por su cuenta.
+
+### `AmortizationPlan` — el plan completo
+
+`src/domain/valueobjects/AmortizationPlan.js`
+
+Agrupa el capital, la tasa, el plazo, la cuota fija y la tabla entera, y calcula
+`totalPaid` y `totalInterest` sumando las filas — no por una fórmula aparte, que
+podría discrepar de la tabla que se pinta debajo.
+
+Valida **cuatro invariantes** en el constructor:
+
+| Invariante | Código de error |
+|---|---|
+| Hay exactamente `term.months` cuotas | `PLAN_LENGTH_MISMATCH` |
+| Van numeradas 1..n sin huecos ni desorden | `PLAN_OUT_OF_ORDER` |
+| La suma de los abonos a capital es el capital prestado | `PLAN_CAPITAL_MISMATCH` |
+| La última cuota deja el saldo en cero | `PLAN_NOT_SETTLED` |
+
+Las dos últimas son las que hacen del redondeo un problema resuelto y no una
+fuente de descuadres silenciosos: si el reparto al peso no cerrara, el plan no
+llegaría a existir.
+
+```js
+const rows = schedule.slice();          // copia defensiva ANTES de validar
+// … cuatro comprobaciones …
+this.#schedule = rows;
+Object.freeze(this.#schedule);
+Object.freeze(this);
+```
+
+La copia se hace **antes** de comprobar nada: sin ella, quien pasó el array
+podría mutarlo entre la validación y el almacenamiento.
+
+#### `yearlySummary()` — por qué vive en el dominio
+
+Una tabla de vivienda a 240 meses son 240 filas. El resumen por año se calcula
+aquí y no en la vista:
+
+```js
+yearlySummary() {
+  for (let start = 0; start < this.#schedule.length; start += 12) {
+    const block = this.#schedule.slice(start, start + 12);
+    // … suma pagado, intereses y capital del bloque …
+  }
+}
+```
+
+Si esa agregación viviera en la plantilla, la vista estaría sumando dinero — y
+sumar dinero es una regla de negocio, no una decisión de presentación. El último
+bloque puede tener menos de 12 cuotas cuando el plazo no es múltiplo de 12.
+
+#### Salida siempre copiada
+
+```js
+get schedule() {
+  return this.#schedule.slice();
+}
+```
+
+Verificado en las suites: vaciar el array devuelto no altera el plan.
+
+---
+
+## 8.11 Los 11 errores de campo posibles
 
 Enviar el formulario vacío produce exactamente 11 entradas en `fieldErrors`,
 verificado en las suites:
@@ -419,7 +521,7 @@ campos fallidos en una sola pasada. Detalle en
 
 ---
 
-## 8.11 Cómo añadir un value object
+## 8.12 Cómo añadir un value object
 
 Ejemplo: `DocumentType` (cédula, cédula de extranjería, pasaporte, NIT).
 
@@ -467,7 +569,7 @@ Checklist: ① `Object.freeze(this)` · ② `static of()` · ③ `equals()` ·
 · ⑥ campos `#privados` con getters de solo lectura · ⑦ cero `import` que salga
 de `domain/`.
 
-## 8.12 Siguiente lectura
+## 8.13 Siguiente lectura
 
 - [09 — Servicios, criterios y errores](./09-dominio-servicios-criterios-errores.md)
 - [10 — Casos de uso y DTOs](./10-casos-de-uso-y-dtos.md)

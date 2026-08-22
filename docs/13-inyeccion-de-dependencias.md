@@ -314,7 +314,7 @@ container.register('router', (c) =>
   ));
 ```
 
-## 13.5 El grafo completo — 32 dependencias
+## 13.5 El grafo completo — 34 dependencias
 
 ```
 config ─────────────┬─────────────────────────────────────────────┐
@@ -326,7 +326,8 @@ rootElement ────┐   │                                             �
                 │   └─► moneyFormatter│ │              │          │
                 │            │        │ │              │          │
                 │            │        │ │              │          │
-                │      productMapper  │ │              │          │
+                │   productMapper     │ │              │          │
+                │   simulationMapper  │ │              │          │
                 │            │        │ │              │          │
     productRepository ───────┼────────┼─┼──────────────┤          │
     amountRangeProvider      │        │ │              │          │
@@ -335,6 +336,7 @@ rootElement ────┐   │                                             �
         │  │  └─► listCreditProductsUseCase            │          │
         │  ├────► searchCreditProductsUseCase          │          │
         │  ├────► getCreditProductNamesUseCase         │          │
+        │  ├────► simulateCreditUseCase                │          │
         │  └────► submitCreditApplicationUseCase ◄─────┘◄─────────┤
         │              (repos + clock + logger)                   │
                                                                   │
@@ -353,6 +355,7 @@ rootElement ────┐   │                                             �
 
     catalogView     + viewRenderer + listCreditProductsUseCase   + notifier ─► catalogController
     simulatorView   + viewRenderer + searchCreditProductsUseCase
+                    + listCreditProductsUseCase + simulateCreditUseCase
                     + getAmountRangeFiltersUseCase + amountRangeProvider
                     + notifier                                              ─► simulatorController
     applicationView + viewRenderer + submitCreditApplicationUseCase
@@ -362,21 +365,45 @@ rootElement ────┐   │                                             �
     urlBuilder + logger ─► router
 ```
 
-Las 32 claves:
+Las 34 claves:
 
 ```
 config · rootElement · logger · notifier · clock · idGenerator · moneyFormatter
-productRepository · amountRangeProvider · applicationRepository · productMapper
+productRepository · amountRangeProvider · applicationRepository
+productMapper · simulationMapper
 listCreditProductsUseCase · searchCreditProductsUseCase
 getAmountRangeFiltersUseCase · getCreditProductNamesUseCase
-submitCreditApplicationUseCase · urlBuilder · viewRenderer
+simulateCreditUseCase · submitCreditApplicationUseCase · urlBuilder · viewRenderer
 navbarComponent · footerComponent · alertComponent · productCardComponent
 catalogView · simulatorView · applicationView · notFoundView · accessRestrictedView
 catalogController · simulatorController · applicationController · notFoundController
 router
 ```
 
-Verificado: `ok : contenedor resuelto (32 dependencias)`.
+Verificado: `ok : contenedor resuelto (34 dependencias)`.
+
+### Los dos registros del simulador
+
+```js
+container.register('simulationMapper', (c) =>
+  new SimulationMapper({ moneyFormatter: c.resolve('moneyFormatter') }),
+);
+
+container.register('simulateCreditUseCase', (c) =>
+  new SimulateCreditUseCase({
+    productRepository: c.resolve('productRepository'),
+    simulationMapper: c.resolve('simulationMapper'),
+  }),
+);
+```
+
+`CreditSimulationService` **no aparece en el contenedor**: es un servicio de
+dominio con métodos estáticos y sin dependencias, así que no hay nada que
+inyectar. Registrar algo que no tiene estado ni colaboradores solo añadiría una
+indirección.
+
+Los dos registros van en el bloque 3 (Aplicación), y el mapper antes que el caso
+de uso: el orden de los bloques documenta el grafo.
 
 ## 13.6 `main.js` — el bootstrap
 

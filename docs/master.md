@@ -11,15 +11,15 @@
 | Stack | HTML5 · CSS3 plano · JavaScript ES2022 (módulos ES nativos) |
 | Dependencias de runtime | **cero** — no hay `node_modules`, ni bundler, ni transpilador |
 | Capas | `domain` · `application` · `infrastructure` · `presentation` (+ `config`) |
-| Archivos JS | 73 (5 327 líneas) — `domain` 23 · `presentation` 22 · `application` 12 · `infrastructure` 11 · `config` 4 · `main.js` 1 |
-| Archivos CSS | 7 (1 466 líneas, cascada explícita) |
+| Archivos JS | 79 (6 881 líneas) — `domain` 26 · `presentation` 22 · `application` 15 · `infrastructure` 11 · `config` 4 · `main.js` 1 |
+| Archivos CSS | 7 (1 681 líneas, cascada explícita) |
 | Contratos (interfaces) | 12 |
-| Casos de uso | 5 |
-| Entidades | 2 · Value objects: 8 |
+| Casos de uso | 6 |
+| Entidades | 2 · Value objects: 10 |
 | Productos del catálogo | 6 (5 replicados del original + `Crédito de Libranza`) |
 | Paletas de tema | 6 — `blue` · `emerald` · `violet` · `amber` · `rose` · `teal` |
-| Adaptadores | 10 |
-| Dependencias en el contenedor | 32 |
+| Adaptadores | 10 · Servicios de dominio: 2 |
+| Dependencias en el contenedor | 34 |
 | Rutas | `/` · `/simulador` · `/solicitar` · `*` (404) |
 
 ---
@@ -92,14 +92,14 @@ Tres itinerarios según para qué vengas:
 | # | Documento | Qué responde |
 |---|---|---|
 | 07 | [Entidades](./07-entidades.md) | `CreditProduct` y `CreditApplication`: invariantes, identidad, comportamiento, máquina de estados |
-| 08 | [Value objects](./08-value-objects.md) | Los 8 value objects, por qué son inmutables, por qué se auto-validan, aritmética de `Money`, solape de `AmountRange` |
+| 08 | [Value objects](./08-value-objects.md) | Los 10 value objects, por qué son inmutables, por qué se auto-validan, aritmética de `Money`, solape de `AmountRange` |
 | 09 | [Servicios, criterios y errores](./09-dominio-servicios-criterios-errores.md) | `CreditApplicationPolicy`, `ProductSearchCriteria` (Specification), jerarquía de los 4 errores de dominio |
 
 ### Aplicación (casos de uso)
 
 | # | Documento | Qué responde |
 |---|---|---|
-| 10 | [Casos de uso y DTOs](./10-casos-de-uso-y-dtos.md) | Los 5 casos de uso, el tipo `Result`, los mappers, por qué la vista recibe DTOs y no entidades |
+| 10 | [Casos de uso y DTOs](./10-casos-de-uso-y-dtos.md) | Los 6 casos de uso, el tipo `Result`, los mappers, por qué la vista recibe DTOs y no entidades |
 
 ### Infraestructura y presentación
 
@@ -107,7 +107,7 @@ Tres itinerarios según para qué vengas:
 |---|---|---|
 | 11 | [Adaptadores de infraestructura](./11-adaptadores-de-infraestructura.md) | Los 10 adaptadores, el datasource estático, la anticorruption layer, cómo sustituir cualquiera por uno HTTP |
 | 12 | [Vistas, controladores y componentes](./12-vistas-controladores-componentes.md) | `BaseView`, `BaseController`, las 6 vistas, los 4 componentes, el escapado por defecto, la gestión de listeners |
-| 13 | [Inyección de dependencias](./13-inyeccion-de-dependencias.md) | El `Container`, el Composition Root, el grafo completo de las 32 dependencias, detección de ciclos |
+| 13 | [Inyección de dependencias](./13-inyeccion-de-dependencias.md) | El `Container`, el Composition Root, el grafo completo de las 34 dependencias, detección de ciclos |
 | 14 | [Enrutado y URLs](./14-enrutado-y-urls.md) | `HistoryRouter`, `UrlBuilder`, prefijo de despliegue autodetectado, delegación de clics, reescritura en Apache/Nginx |
 | 15 | [Sistema de estilos](./15-sistema-de-estilos.md) | Los 7 archivos CSS en cascada, los design tokens, el mapeo Tailwind → CSS plano, los temas de producto |
 
@@ -189,6 +189,7 @@ Dónde está declarado cada nombre propio del proyecto.
 | Artefacto | Tipo | Archivo | Doc |
 |---|---|---|---|
 | `AlertComponent` | Componente | `src/presentation/components/AlertComponent.js` | [12](./12-vistas-controladores-componentes.md) |
+| `AmortizationPlan` | Value object | `src/domain/valueobjects/AmortizationPlan.js` | [08](./08-value-objects.md) |
 | `AmountRange` | Value object | `src/domain/valueobjects/AmountRange.js` | [08](./08-value-objects.md) |
 | `APPLICATION_STATUS` | Enum | `src/domain/entities/CreditApplication.js` | [07](./07-entidades.md) |
 | `ApplicationController` | Controlador | `src/presentation/controllers/ApplicationController.js` | [12](./12-vistas-controladores-componentes.md) |
@@ -212,6 +213,7 @@ Dónde está declarado cada nombre propio del proyecto.
 | `CreditProductDTO` | DTO | `src/application/dto/CreditProductDTO.js` | [10](./10-casos-de-uso-y-dtos.md) |
 | `CreditProductFactory` | Factory / ACL | `src/infrastructure/persistence/factories/CreditProductFactory.js` | [11](./11-adaptadores-de-infraestructura.md) |
 | `CreditProductMapper` | Mapper | `src/application/mappers/CreditProductMapper.js` | [10](./10-casos-de-uso-y-dtos.md) |
+| `CreditSimulationService` | Servicio de dominio | `src/domain/services/CreditSimulationService.js` | [09](./09-dominio-servicios-criterios-errores.md) |
 | `CryptoIdGenerator` | Adaptador | `src/infrastructure/identity/CryptoIdGenerator.js` | [11](./11-adaptadores-de-infraestructura.md) |
 | `defineContract` | Función | `src/domain/contracts/Contract.js` | [06](./06-contratos-e-interfaces.md) |
 | `DocumentTitleController` | Decorador | `src/presentation/decorators/DocumentTitleController.js` | [16](./16-catalogo-de-patrones.md) |
@@ -232,6 +234,7 @@ Dónde está declarado cada nombre propio del proyecto.
 | `IMoneyFormatter` | Puerto | `src/domain/contracts/IMoneyFormatter.js` | [06](./06-contratos-e-interfaces.md) |
 | `INotifier` | Puerto | `src/application/contracts/INotifier.js` | [06](./06-contratos-e-interfaces.md) |
 | `InMemoryCreditProductRepository` | Adaptador | `src/infrastructure/persistence/InMemoryCreditProductRepository.js` | [11](./11-adaptadores-de-infraestructura.md) |
+| `Installment` | Value object | `src/domain/valueobjects/Installment.js` | [08](./08-value-objects.md) |
 | `InterestRate` | Value object | `src/domain/valueobjects/InterestRate.js` | [08](./08-value-objects.md) |
 | `IntlMoneyFormatter` | Adaptador | `src/infrastructure/formatters/IntlMoneyFormatter.js` | [11](./11-adaptadores-de-infraestructura.md) |
 | `IRouter` | Puerto | `src/presentation/contracts/IRouter.js` | [06](./06-contratos-e-interfaces.md) |
@@ -251,6 +254,9 @@ Dónde está declarado cada nombre propio del proyecto.
 | `Result` | Tipo de retorno | `src/application/shared/Result.js` | [10](./10-casos-de-uso-y-dtos.md) |
 | `ROUTES` / `ROUTE_TABLE` | Configuración | `src/config/routes.js` | [14](./14-enrutado-y-urls.md) |
 | `SearchCreditProductsUseCase` | Caso de uso | `src/application/usecases/SearchCreditProductsUseCase.js` | [10](./10-casos-de-uso-y-dtos.md) |
+| `SimulateCreditUseCase` | Caso de uso | `src/application/usecases/SimulateCreditUseCase.js` | [10](./10-casos-de-uso-y-dtos.md) |
+| `SimulationDTO` | DTO | `src/application/dto/SimulationDTO.js` | [10](./10-casos-de-uso-y-dtos.md) |
+| `SimulationMapper` | Mapper | `src/application/mappers/SimulationMapper.js` | [10](./10-casos-de-uso-y-dtos.md) |
 | `SimulatorController` | Controlador | `src/presentation/controllers/SimulatorController.js` | [12](./12-vistas-controladores-componentes.md) |
 | `SimulatorView` | Vista | `src/presentation/views/SimulatorView.js` | [12](./12-vistas-controladores-componentes.md) |
 | `StaticAmountRangeProvider` | Adaptador | `src/infrastructure/persistence/StaticAmountRangeProvider.js` | [11](./11-adaptadores-de-infraestructura.md) |
@@ -280,6 +286,56 @@ Dónde está declarado cada nombre propio del proyecto.
 ## 7. Historial de cambios
 
 Cambios sobre la reconstrucción inicial, con el porqué y lo que costaron.
+
+### El simulador pasa a simular
+
+**Motivo**: la ruta `/simulador` se llamaba «Simulador de Crédito» pero no
+calculaba nada. Era un filtro del catálogo con un título que prometía otra cosa:
+el estado del controlador era `{ query, rangeIndex, focusField }`, sin monto, sin
+plazo y sin producto elegido, y la única matemática financiera del proyecto
+—`CreditApplicationPolicy.assessAffordability`— solo se ejecutaba al **radicar una
+solicitud**, nunca al simular.
+
+**Qué hace ahora**: producto, monto y plazo → cuota mensual, total de intereses,
+total a pagar y tabla de amortización por el sistema francés, con resumen anual o
+detalle mes a mes. El filtro del catálogo se conserva tal cual, debajo y separado:
+son dos herramientas distintas sobre la misma página.
+
+| Capa | Archivo | Cambio |
+|---|---|---|
+| Dominio | `valueobjects/Installment.js` | **nuevo** — una fila de la amortización; invariante `cuota = interés + capital` |
+| Dominio | `valueobjects/AmortizationPlan.js` | **nuevo** — el plan completo; 4 invariantes + `yearlySummary()` |
+| Dominio | `services/CreditSimulationService.js` | **nuevo** — sistema francés; único sitio con la fórmula |
+| Dominio | `services/CreditApplicationPolicy.js` | delega fórmula y errores de campo en el servicio nuevo |
+| Aplicación | `dto/SimulationDTO.js` | **nuevo** — congelado en profundidad |
+| Aplicación | `mappers/SimulationMapper.js` | **nuevo** — plan → DTO vía `IMoneyFormatter` |
+| Aplicación | `usecases/SimulateCreditUseCase.js` | **nuevo** — orquesta; devuelve `Result` |
+| Aplicación | `dto/CreditProductDTO.js` + mapper | `minAmount` y `maxAmount` crudos, para acotar los inputs |
+| Presentación | `views/SimulatorView.js` | formulario, panel de resultado y tabla plegable |
+| Presentación | `controllers/SimulatorController.js` | estado del simulador y del filtro, por separado |
+| Config | `dependencies.js` | 2 registros: `simulationMapper` · `simulateCreditUseCase` (32 → 34) |
+| Estilos | `06-pages.css` · `07-responsive.css` | ~215 líneas: resultado con tema, tabla con encabezado pegajoso |
+| Pruebas | las tres suites | 146 → 240 aserciones |
+
+**Cero contratos nuevos.** `ICreditProductRepository` ya tenía `findById` y
+`IMoneyFormatter` ya formateaba: no hizo falta abrir un puerto, así que la regla
+de dependencia no se tocó.
+
+**Decisiones que costaron discusión**:
+
+1. **El redondeo.** `Money` guarda enteros, así que cada cuota se redondea al
+   peso y a 240 meses eso descuadra. La última cuota absorbe el residuo —es lo
+   que hace la banca— y `AmortizationPlan` lo verifica: la suma de capital debe
+   ser exactamente el capital prestado y el saldo final, cero.
+2. **La fórmula, en un solo sitio.** Ya existía en `CreditApplicationPolicy`.
+   Copiarla al simulador habría permitido que las dos cifras se separaran con
+   cualquier ajuste posterior; ahora la política la consume del servicio.
+3. **Un error de campo no borra la cifra anterior.** El controlador conserva la
+   última simulación válida mientras el usuario corrige, en vez de dejar el panel
+   en blanco a cada tecla intermedia.
+4. **El filtro sigue siendo un filtro.** Se descartó que hacer clic en una tarjeta
+   precargara ese producto en el simulador: acopla dos herramientas que funcionan
+   mejor separadas.
 
 ### Sexto producto del catálogo — `Crédito de Libranza`
 

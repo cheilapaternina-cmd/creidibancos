@@ -22,7 +22,7 @@ responsabilidades**.
 export const IUseCase = defineContract('IUseCase', ['execute']);
 ```
 
-Los 5 casos de uso exponen `execute()` y nada más. No hay una clase
+Los 6 casos de uso exponen `execute()` y nada más. No hay una clase
 `CreditService` con `list()`, `search()`, `submit()` y `getNames()`: son cuatro
 archivos separados, porque cambiar la búsqueda no debe tocar el archivo donde
 vive la radicación.
@@ -349,8 +349,8 @@ container.register('productRepository', (c) =>
 ```
 
 Archivos que cambian además de ese: **uno** (el nuevo adaptador). Archivos que
-**no** cambian: los 5 casos de uso, los 4 controladores, las 6 vistas, las 2
-entidades, los 8 value objects.
+**no** cambian: los 6 casos de uso, los 4 controladores, las 6 vistas, las 2
+entidades, los 10 value objects.
 
 ### El contenedor no es un Service Locator disfrazado
 
@@ -405,7 +405,7 @@ son pequeños (ISP) y las dependencias entran por constructor (DIP).
 
 | Principio | Materializado en | Verificación |
 |---|---|---|
-| **S** | 5 casos de uso con `execute()` único · `ViewRenderer` como único escritor del DOM · factory separada del repositorio | Todas las asignaciones de `innerHTML` de `src/presentation/` están en `ViewRenderer` |
+| **S** | 6 casos de uso con `execute()` único · `ViewRenderer` como único escritor del DOM · factory separada del repositorio | Todas las asignaciones de `innerHTML` de `src/presentation/` están en `ViewRenderer` |
 | **O** | `DocumentTitleController` · `variant` en componentes · formulario declarativo · datasource como única fuente de productos | Añadir un producto = 1 entrada; aparece en 3 sitios |
 | **L** | Repositorios `async` y con copias defensivas · `assertImplements` comparando referencias · decorador que delega `dispose()` | `ok : contrato: rechaza controlador incompleto` |
 | **I** | 12 contratos, media de 2,75 métodos, máximo 5 | Tabla de §5.4 |

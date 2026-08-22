@@ -170,7 +170,7 @@ const container = buildContainer({ config: AppConfig, rootElement });
 container.eagerResolveAll();
 ```
 
-`eagerResolveAll()` fuerza la construcción de las 32 dependencias. Sin esa
+`eagerResolveAll()` fuerza la construcción de las 34 dependencias. Sin esa
 llamada, un adaptador defectuoso registrado para la ruta `/solicitar` no fallaría
 hasta que alguien visitara esa ruta.
 
@@ -290,7 +290,7 @@ export const IUseCase = defineContract('IUseCase', ['execute']);
 Un único método por caso de uso. Es lo que permite decorar cualquiera de ellos
 (logging, caché, métricas) sin conocer su tipo concreto.
 
-Implementado por los 5 casos de uso.
+Implementado por los 6 casos de uso.
 
 #### `ILogger`
 

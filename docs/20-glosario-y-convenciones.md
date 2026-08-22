@@ -8,7 +8,7 @@
 |---|---|---|
 | **Adaptador** | Implementación concreta de un puerto, usando una tecnología | `IntlMoneyFormatter` implementa `IMoneyFormatter` |
 | **Agregado** | Grupo de objetos de dominio tratado como una unidad, con una raíz que controla el acceso | `CreditApplication` + sus 3 value objects |
-| **Always-valid domain model** | Un objeto que existe es válido; la validación está en el constructor | Los 8 value objects |
+| **Always-valid domain model** | Un objeto que existe es válido; la validación está en el constructor | Los 10 value objects |
 | **Anticorruption layer** | Frontera que impide que el formato de un sistema externo contamine el dominio | `CreditProductFactory` |
 | **Caso de uso** | Una secuencia completa que responde a "el sistema debe poder hacer X" | `SubmitCreditApplicationUseCase` |
 | **Composition Root** | El único lugar donde se construyen las clases concretas y se une el grafo | `config/dependencies.js` |
@@ -22,10 +22,10 @@
 | **Puerto de salida** (driven) | El núcleo llama al exterior | `ICreditProductRepository`, `IClock` |
 | **Regla de dependencia** | Las importaciones solo apuntan hacia el núcleo | Verificada con `grep` |
 | **Specification** | Objeto que encapsula un criterio: `isSatisfiedBy(candidato)` | `ProductSearchCriteria` |
-| **Value object** | Objeto inmutable sin identidad, comparado por valor | `Money`, `Term`, `AmountRange` |
+| **Value object** | Objeto inmutable sin identidad, comparado por valor | `Money`, `Term`, `AmountRange`, `AmortizationPlan` |
 | **ViewModel** | Los datos concretos que una vista necesita para pintarse | `{ products, ranges, query, matched, total, isFiltered }` |
-| **Anemic domain model** (antipatrón) | Entidades sin comportamiento + servicios con toda la lógica | Evitado: hay 1 servicio de dominio y entidades con métodos |
-| **Primitive obsession** (antipatrón) | Modelar conceptos del negocio con tipos primitivos | Evitado con los 8 value objects |
+| **Anemic domain model** (antipatrón) | Entidades sin comportamiento + servicios con toda la lógica | Evitado: hay 2 servicios de dominio y entidades con métodos |
+| **Primitive obsession** (antipatrón) | Modelar conceptos del negocio con tipos primitivos | Evitado con los 10 value objects |
 | **Service Locator** (antipatrón) | Que las clases pidan sus dependencias a un contenedor | Evitado: el contenedor solo se usa en el arranque |
 
 ## 20.2 Glosario del dominio de negocio
@@ -40,7 +40,11 @@
 | **Tasa efectiva anual (E.A.)** | Rendimiento anual real, con capitalización. Ej. 14,2 % |
 | **Tasa mensual equivalente** | `(1 + i_anual)^(1/12) − 1`. **No** es `i_anual / 12` |
 | **Plazo** (`Term`) | Número de cuotas mensuales |
-| **Cuota fija / sistema francés** | `C = P·i / (1 − (1+i)^−n)` — cuota constante |
+| **Cuota fija / sistema francés** | `C = P·i / (1 − (1+i)^−n)` — cuota constante. Implementada en `CreditSimulationService` |
+| **Amortización** (`AmortizationPlan`) | Reparto del crédito en cuotas: cuánto de cada una va a intereses y cuánto abona capital |
+| **Cuota** (`Installment`) | Una fila del plan: pago, intereses, capital y saldo restante de ese mes |
+| **Saldo vivo** | Capital pendiente tras pagar una cuota. Los intereses del mes siguiente se calculan sobre él |
+| **Residuo de redondeo** | Descuadre que deja redondear cada cuota al peso. Lo absorbe la última cuota, que abona todo el saldo restante |
 | **Capacidad de pago** | Regla del proyecto: la cuota no debe superar el 40 % del ingreso mensual |
 | **Rango de monto** (`AmountRange`) | Intervalo `[mínimo, máximo]` que ofrece un producto, o que filtra el usuario |
 | **Destino del crédito** | Uso declarado del dinero (campo `purpose`) |

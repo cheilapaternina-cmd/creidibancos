@@ -31,7 +31,7 @@ Un solo método. Consecuencias:
   Un `CachedUseCase` o un `LoggedUseCase` funcionaría con los cinco.
 - **Testeable**: la superficie a probar es una función.
 
-## 10.3 Los 5 casos de uso
+## 10.3 Los 6 casos de uso
 
 | Caso de uso | Tipo | Dependencias | Devuelve |
 |---|---|---|---|
@@ -39,9 +39,10 @@ Un solo método. Consecuencias:
 | `SearchCreditProductsUseCase` | Query | `productRepository`, `productMapper` | `Result<{ products, matched, total, criteria, isFiltered }>` |
 | `GetAmountRangeFiltersUseCase` | Query | `amountRangeProvider` | `Result<Array<{ index, label }>>` |
 | `GetCreditProductNamesUseCase` | Query | `productRepository` | `Result<string[]>` |
+| `SimulateCreditUseCase` | Query | `productRepository`, `simulationMapper` | `Result<SimulationDTO>` |
 | `SubmitCreditApplicationUseCase` | Command | `applicationRepository`, `productRepository`, `clock`, `logger` | `Result<{ reference, status, applicantFirstName, affordability }>` |
 
-Cuatro queries y un command. La separación no es formalmente CQRS, pero la
+Cinco queries y un command. La separación no es formalmente CQRS, pero la
 distinción es útil: las queries no mutan estado y podrían cachearse; el command
 sí muta y por eso registra en el log.
 
@@ -152,6 +153,72 @@ Existe para eliminar una duplicación real del sitio original: allí el `<select
 "Tipo de crédito" se alimentaba de un array `dk` escrito a mano con los cinco
 nombres. Añadir un producto obligaba a acordarse de dos sitios. Aquí el select
 deriva del catálogo.
+
+### `SimulateCreditUseCase`
+
+Sirve el simulador de `/simulador`. Responde a "el sistema debe poder decirle a
+alguien cuánto pagaría por un crédito".
+
+```js
+async execute({ productId, amount, termInMonths } = {}) {
+  try {
+    const product = await this.#repository.findById(productId);
+
+    if (!product) {
+      throw new ValidationError(
+        { productId: 'Selecciona un producto de crédito para simular.' },
+        'No se encontró el producto a simular.',
+      );
+    }
+
+    const { money, term } = SimulateCreditUseCase.#parse({ amount, termInMonths });
+    const plan = CreditSimulationService.simulate(product, money, term);
+
+    return Result.ok(this.#mapper.toDTO(plan, product));
+  } catch (err) {
+    return Result.fromError(err);
+  }
+}
+```
+
+**Orquesta, no calcula.** Cuatro pasos —buscar, convertir, delegar, aplanar— y
+ni una operación aritmética. La matemática entera está en
+`CreditSimulationService`; si aquí apareciera un `Math.pow`, sería una regla de
+negocio fuera del dominio.
+
+#### `#parse` — acumular los errores de entrada
+
+La entrada llega del formulario, o sea en texto y potencialmente basura. Los
+fallos se acumulan en un único `ValidationError` en vez de lanzar en el primero:
+
+```js
+const errors = {};
+// … valida amount …
+// … valida termInMonths …
+if (Object.keys(errors).length > 0) {
+  throw new ValidationError(errors, 'Revisa los datos de la simulación.');
+}
+```
+
+Es el mismo criterio de `CreditApplicationMapper` (§10.6): el formulario marca
+**todos** los campos fallidos en una sola pasada, no uno por intento. Verificado:
+
+```
+ok  : monto y plazo inválidos se reportan juntos, en una sola pasada
+```
+
+#### Dos niveles de validación, dos dueños
+
+| Qué se valida | Quién | Ejemplo de mensaje |
+|---|---|---|
+| Que la entrada sea un número, un entero, no vacía | `#parse` (aplicación) | «Indica cuánto dinero necesitas.» |
+| Que el producto admita ese monto y ese plazo | `CreditSimulationService` (dominio) | «El monto debe estar entre $1.000.000 y $30.000.000 para Crédito Libre Inversión.» |
+
+La aplicación comprueba la **forma** del dato; el dominio, la **regla de
+negocio**. Los dos producen `fieldErrors` con las mismas claves (`amount`,
+`termInMonths`), así que el controlador los trata igual sin saber de dónde vienen.
+
+Es una **query**: no muta nada y no escribe en el log.
 
 ### `SubmitCreditApplicationUseCase`
 
@@ -327,6 +394,8 @@ congelado y **no tiene métodos**.
   annualRateLabel: '14.2%',
   maxTermMonths: 84,
   maxTermLabel: '84 meses',
+  minAmount: 5000000,
+  maxAmount: 120000000,
   minAmountLabel: '$ 5.000.000',
   maxAmountLabel: '$ 120.000.000',
   amountRangeLabel: '$ 5.000.000 – $ 120.000.000',
@@ -337,10 +406,68 @@ Decisiones:
 
 - **Valores crudos Y etiquetas** (`annualRate: 14.2` y `annualRateLabel: '14.2%'`).
   El crudo sirve para ordenar o comparar en la UI; la etiqueta para pintar. La
-  vista nunca formatea.
+  vista nunca formatea. `minAmount` y `maxAmount` existen por eso mismo: el
+  simulador necesita acotar numéricamente sus inputs (`min="1000000"`), y una
+  etiqueta con puntos de millar no sirve como atributo HTML.
 - **`themeClass` ya resuelto** (`theme-emerald`), no `palette: 'emerald'`. La
   vista no compone nombres de clase.
 - **Congelado** con `freezeProductDTO(dto)`.
+
+### `SimulationDTO`
+
+El resultado de una simulación, aplanado. Mismo criterio que el DTO de producto
+—crudo para comparar, etiqueta para pintar— aplicado a cada importe:
+
+```js
+{
+  productId: 1,
+  productName: 'Crédito Libre Inversión',
+  productIcon: '💳',
+  themeClass: 'theme-blue',
+
+  annualRate: 18.5,
+  annualRateLabel: '18.5% E.A.',
+  monthlyRateLabel: '1.42% mensual',
+
+  amount: 10000000,            amountLabel: '$ 10.000.000',
+  termInMonths: 36,            termLabel: '36 meses (3 años)',
+
+  installment: 357000,         installmentLabel: '$ 357.000',
+  finalInstallment: 356984,    finalInstallmentLabel: '$ 356.984',
+  hasResidualAdjustment: true,
+
+  totalPaid: 12851984,         totalPaidLabel: '$ 12.851.984',
+  totalInterest: 2851984,      totalInterestLabel: '$ 2.851.984',
+  interestRatioLabel: '28.5% del capital',
+
+  schedule: [ /* una fila por mes */ ],
+  yearlySummary: [ /* un bloque por año */ ],
+}
+```
+
+Decisiones propias de este DTO:
+
+- **`hasResidualAdjustment` es un booleano, no una comparación en la plantilla.**
+  Decidir si la última cuota difiere de la fija es una consecuencia de cómo se
+  redondea, y eso es dominio. La vista solo pregunta.
+- **`yearlySummary` viene calculado.** La vista no agrupa ni suma: recibe los
+  bloques listos desde `AmortizationPlan.yearlySummary()`.
+- **Congelado en profundidad.** La tabla es el dato más largo que cruza la
+  frontera, así que `freezeSimulationDTO` congela también cada fila y los dos
+  arrays:
+
+  ```js
+  export function freezeSimulationDTO(dto) {
+    dto.schedule.forEach(Object.freeze);
+    dto.yearlySummary.forEach(Object.freeze);
+    Object.freeze(dto.schedule);
+    Object.freeze(dto.yearlySummary);
+    return Object.freeze(dto);
+  }
+  ```
+
+  Verificado: `ok : el DTO está congelado en profundidad` y `ok : el DTO no
+  expone métodos: la vista no puede ejecutar reglas`.
 
 ## 10.6 Mappers
 
@@ -381,6 +508,32 @@ export class CreditProductMapper {
 
 Recibe el formateador **inyectado** (`IMoneyFormatter`), nunca lo instancia: es
 el punto donde el DIP se hace visible en la capa de aplicación.
+
+### `SimulationMapper` — plan de amortización → DTO
+
+```js
+export class SimulationMapper {
+  #moneyFormatter;
+
+  constructor({ moneyFormatter }) {
+    assertImplements(moneyFormatter, IMoneyFormatter);
+    this.#moneyFormatter = moneyFormatter;
+  }
+
+  toDTO(plan, product) {
+    const money = (value) => this.#moneyFormatter.format(value);
+    // … aplana plan y product en un objeto plano y congelado …
+  }
+}
+```
+
+Recibe el formateador por el puerto `IMoneyFormatter`, igual que
+`CreditProductMapper`: aquí no se conoce `Intl` ni el locale. Es el único punto
+donde el `AmortizationPlan` se aplana; a partir de aquí la presentación trabaja
+con números y cadenas, nunca con `Money`.
+
+La única regla de formato propia es `#termLabel`, que produce «36 meses (3
+años)» solo cuando el plazo es múltiplo de 12, y «18 meses» cuando no.
 
 ### `CreditApplicationMapper` — entrada cruda → value objects
 

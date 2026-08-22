@@ -246,21 +246,73 @@ Variante de footer `catalog` (margen corto + texto largo) y tarjetas en variante
 
 ### `SimulatorView` — ruta `/simulador`
 
-La única vista con interacción compleja. Estructura: navbar → título → panel de
-filtros → aviso → contador → grid o estado vacío → footer.
+La vista más grande del proyecto. Tiene **dos mitades independientes**:
+
+```
+navbar
+├── SIMULADOR
+│   ├── formulario        producto · monto · plazo
+│   ├── resultado         cuota · intereses · total · coste
+│   └── amortización      plegable · resumen anual | detalle mensual
+├── separador
+└── CATÁLOGO
+    ├── filtros           texto · rango de monto
+    ├── aviso · contador
+    └── grid o estado vacío
+footer
+```
+
+El filtro **no** alimenta al simulador: son dos herramientas sobre la misma
+página. Elegir un producto en el simulador no filtra el catálogo, y filtrar el
+catálogo no cambia lo que se está simulando.
 
 Estados que maneja el viewModel:
 
-| Campo | Uso |
-|---|---|
-| `products` | DTOs a pintar |
-| `ranges` | opciones del `<select>` |
-| `query` | valor actual del input (se re-pinta con `value="…"`) |
-| `selectedRangeIndex` | opción marcada `selected` |
-| `matched` / `total` | contador "Mostrando N de M productos" |
-| `isFiltered` | si se muestra el contador |
+| Campo | Mitad | Uso |
+|---|---|---|
+| `catalog` | Simulador | DTOs de producto para el `<select>` |
+| `form` | Simulador | `{ productId, amount, termInMonths }` en crudo, tal como se teclea |
+| `bounds` | Simulador | Límites del producto elegido: `min`/`max` de los inputs |
+| `simulation` | Simulador | `SimulationDTO` o `null` |
+| `errors` | Simulador | `fieldErrors` del dominio, indexados por `name` |
+| `schedule` | Simulador | `{ open, mode }` de la tabla de amortización |
+| `products` | Catálogo | DTOs a pintar |
+| `ranges` | Catálogo | opciones del `<select>` |
+| `query` | Catálogo | valor actual del input (se re-pinta con `value="…"`) |
+| `selectedRangeIndex` | Catálogo | opción marcada `selected` |
+| `matched` / `total` | Catálogo | contador "Mostrando N de M productos" |
+| `isFiltered` | Catálogo | si se muestra el contador |
 
-Estado vacío, cuando ningún producto coincide:
+#### Los límites llegan, no se deducen
+
+```js
+<input id="sim-amount" name="amount" type="number"
+       value="${form.amount}"
+       ${raw(bounds ? `min="${bounds.minAmount}"` : '')}
+       ${raw(bounds && bounds.maxAmount !== null ? `max="${bounds.maxAmount}"` : '')} />
+```
+
+`bounds` viene del DTO del producto. La vista no sabe que Libre Inversión llega
+hasta 30 millones: lo pinta. Y el `max` del HTML es **ayuda**, no validación: la
+regla real la aplica el dominio, y por eso el mensaje de error dice el límite
+concreto en vez de un genérico del navegador.
+
+#### La tabla, plegada y por año
+
+240 filas de un crédito de vivienda no caben en una pantalla ni en la paciencia
+de nadie. Por defecto: plegada, y al abrirla, resumen anual.
+
+```js
+${schedule.open ? '▲ Ocultar' : '▼ Ver'} tabla de amortización (${rowCount} cuotas)
+```
+
+El botón declara `aria-expanded` y los dos modos usan `aria-pressed`. La tabla
+scrollea dentro de `.sim-schedule__scroll`; la página nunca se desplaza en
+horizontal.
+
+#### Estado vacío y errores
+
+Sin simulación válida no se pinta un panel en blanco, se explica qué falta:
 
 ```js
 ${raw(products.length === 0
@@ -269,7 +321,14 @@ ${raw(products.length === 0
   : html`<div class="grid-products" data-results>…</div>`)}
 ```
 
+Los errores de campo se pintan bajo su input con `role="alert"` y marcan el
+control con `is-invalid` y `aria-invalid="true"`. El texto es literalmente el que
+produjo el dominio.
+
 Enlace de eventos y restauración del foco: ver [04 §4.3](./04-mvc-presentacion.md).
+Como el re-render sustituye todos los nodos, `#bindSimulator` y `#bindFilters` se
+vuelven a ejecutar en cada pasada y `BaseView.destroy()` limpia los listeners
+anteriores — sin eso habría una fuga por cada tecla pulsada.
 
 ### `ApplicationView` — ruta `/solicitar`
 
@@ -429,56 +488,103 @@ blanco: el navbar y el footer siguen ahí, el usuario puede navegar.
 
 ### `SimulatorController`
 
-El único con estado de UI significativo.
+El más grande, y el único con estado de UI significativo. Guarda el estado de las
+dos mitades de la página por separado:
 
 ```js
-#state = { query: '', rangeIndex: 0, focusField: null };
-#ranges = [];
+#filter     = { query: '', rangeIndex: 0 };
+#form       = { productId: '', amount: '', termInMonths: '' };
+#schedule   = { open: false, mode: 'yearly' };
+#simulation = null;      // último SimulationDTO válido
+#errors     = {};        // fieldErrors del dominio
+#focusField = null;
+#catalog    = [];        // DTOs de producto, para el <select> y los límites
+#ranges     = [];
+```
 
+#### Arranca con una simulación hecha
+
+```js
 async handle() {
-  this.#state = { query: '', rangeIndex: 0, focusField: null };
-  const rangesResult = await this.#getRanges.execute();
-  this.#ranges = rangesResult.isSuccess ? rangesResult.value : [];
-  await this.#renderResults({ initial: true });
-}
-
-async onSearch({ query, rangeIndex }) {
-  this.#state = { query, rangeIndex, focusField: 'query' };
-  await this.#renderResults({ initial: false });
-}
-
-async onClear() {
-  this.#state = { query: '', rangeIndex: 0, focusField: null };
-  await this.#renderResults({ initial: false });
-}
-
-async #renderResults({ initial }) {
-  const amountRange = await this.#amountRangeProvider.byIndex(this.#state.rangeIndex);
-  const result = await this.#searchProducts.execute({ query: this.#state.query, amountRange });
-
-  if (result.isFailure) {
-    this.#notifier.error(result.error, 'No se pudo aplicar el filtro');
-    return;
-  }
-
-  const viewModel = { /* products, ranges, query, selectedRangeIndex, matched, total, isFiltered */ };
-  const handlers = this.#handlers();
-
-  if (initial) this.present(viewModel, handlers);
-  else         this.update(viewModel, handlers);
+  const [rangesResult, catalogResult] = await Promise.all([
+    this.#getRanges.execute(),
+    this.#listProducts.execute(),
+  ]);
+  // …
+  this.#form = this.#defaultForm();      // primer producto · su monto mínimo · 12 meses
+  await this.#runSimulation();
+  await this.#render({ initial: true });
 }
 ```
 
-Puntos de diseño:
+Una pantalla que arranca vacía no enseña qué hace. Entrar en `/simulador` ya
+muestra una cuota calculada sobre el primer producto del catálogo.
+
+#### Un error de campo no borra la cifra anterior
+
+```js
+async #runSimulation() {
+  const result = await this.#simulateCredit.execute(this.#form);
+
+  if (result.isSuccess) {
+    this.#simulation = result.value;
+    this.#errors = {};
+    return;
+  }
+
+  this.#errors = result.fieldErrors;
+
+  if (!result.hasFieldErrors) {
+    this.#notifier.error(result.error, 'No se pudo simular el crédito');
+  }
+}
+```
+
+`#simulation` **no** se pone a `null` cuando falla la validación: el usuario
+sigue viendo la última cuota buena mientras corrige el campo marcado. Borrarla
+haría parpadear la pantalla en cada tecla intermedia.
+
+La distinción del final importa: un fallo **con** campo señalado es del usuario y
+se pinta bajo el input; uno **sin** campo es técnico y va al `INotifier`, porque
+un error que no se ve es un error que nadie arregla.
+
+#### Cambiar de producto reencaja, no castiga
+
+```js
+async onProductChange(productId) {
+  const product = this.#catalog.find((item) => String(item.id) === String(productId));
+
+  this.#form = product
+    ? {
+        productId: String(product.id),
+        amount: String(SimulatorController.#clamp(
+          Number(this.#form.amount), product.minAmount, product.maxAmount)),
+        termInMonths: String(Math.min(
+          Number(this.#form.termInMonths) || 12, product.maxTermMonths)),
+      }
+    : { ...this.#form, productId: String(productId) };
+  // …
+}
+```
+
+Cambiar de producto es una exploración, no una equivocación: si el monto se sale
+del rango nuevo se ajusta al extremo más cercano en vez de dejar al usuario
+mirando un error que no provocó. Verificado en la suite: con 1.000.000 en el
+campo, pasar a Vehículo lo sube a 5.000.000.
+
+#### Resto de decisiones
 
 - **Reinicia el estado en `handle()`**: volver al simulador desde otra ruta
   empieza limpio.
-- **`focusField: 'query'`** solo cuando el cambio vino de teclear; al limpiar es
-  `null` para no robar el foco.
+- **`focusField`** se fija al nombre del campo que provocó el cambio y es `null`
+  cuando el cambio vino de un botón, para no robar el foco.
 - **Traduce el índice del `<select>` a `AmountRange`** con el puerto
   `IAmountRangeProvider`. El controlador no construye value objects a mano.
 - **`initial` decide `present` vs `update`**: solo el primer render mueve el
   scroll.
+- **No calcula nada.** No hay una sola operación aritmética sobre dinero en el
+  controlador: `#clamp` compara límites que le dieron, y todo lo demás llega
+  resuelto en el `SimulationDTO`.
 
 ### `ApplicationController`
 

@@ -17,7 +17,7 @@ Regla de decisión:
  └─ SÍ → método de esa entidad     (CreditProduct.admitsAmount)
 
 ¿Necesita datos de DOS o más entidades?
- └─ SÍ → servicio de dominio       (CreditApplicationPolicy)
+ └─ SÍ → servicio de dominio       (CreditApplicationPolicy, CreditSimulationService)
 
 ¿No necesita ninguna entidad, solo transforma datos?
  └─ Probablemente sea un value object o un helper, no un servicio
@@ -25,8 +25,13 @@ Regla de decisión:
 
 El error común es crear servicios para todo (`CreditProductService`,
 `ApplicationService`) y dejar las entidades como sacos de datos sin
-comportamiento — el *anemic domain model*. Aquí hay **un solo** servicio de
-dominio, porque solo hay una regla que cruza entidades.
+comportamiento — el *anemic domain model*. Aquí hay **dos** servicios de
+dominio, uno por cada regla que cruza conceptos:
+
+| Servicio | Qué cruza | Responde a |
+|---|---|---|
+| `CreditApplicationPolicy` | `CreditApplication` × `CreditProduct` | ¿Se puede radicar esta solicitud? |
+| `CreditSimulationService` | `CreditProduct` × `Money` × `Term` | ¿Cuánto pagaría por este crédito? |
 
 ### `CreditApplicationPolicy`
 
@@ -48,19 +53,15 @@ static assertAdmissible(application, product) {
     return;
   }
 
-  const errors = {};
   const requested = application.requestedCredit;
 
-  if (!product.admitsAmount(requested.amount)) {
-    const min = product.minAmount.amount.toLocaleString('es-CO');
-    const max = product.maxAmount ? product.maxAmount.amount.toLocaleString('es-CO') : 'sin límite';
-    errors.amount = `El monto debe estar entre $${min} y $${max} para ${product.name}.`;
-  }
-
-  if (!product.admitsTerm(requested.term)) {
-    errors.termInMonths =
-      `El plazo máximo para ${product.name} es de ${product.maxTerm.months} meses.`;
-  }
+  // Mismo diagnóstico que usa el simulador: si cambian los límites de un
+  // producto, ambas rutas lo reflejan sin tocar dos sitios.
+  const errors = CreditSimulationService.productFieldErrors(
+    product,
+    requested.amount,
+    requested.term,
+  );
 
   if (Object.keys(errors).length > 0) {
     throw new ValidationError(errors, 'La solicitud no cumple las condiciones del producto.');
@@ -70,9 +71,14 @@ static assertAdmissible(application, product) {
 
 Detalles de diseño:
 
-- **Delega en las entidades.** No implementa la comparación de rangos: pregunta
-  `product.admitsAmount(...)` y `product.admitsTerm(...)`. El servicio orquesta,
-  las entidades deciden.
+- **Delega en las entidades.** No implementa la comparación de rangos:
+  `productFieldErrors` pregunta `product.admitsAmount(...)` y
+  `product.admitsTerm(...)`. El servicio orquesta, las entidades deciden.
+- **El diagnóstico se comparte con el simulador.** El mapa de errores lo produce
+  `CreditSimulationService.productFieldErrors`, y cada consumidor lo envuelve con
+  su propio encabezado: "La solicitud no cumple las condiciones del producto" al
+  radicar, "No se puede simular con esos datos" al simular. Un límite de producto
+  que cambie se refleja en las dos rutas a la vez.
 - **Las claves de `errors` son los `name` de los campos del formulario**
   (`amount`, `termInMonths`). Así el `ValidationError` viaja intacto hasta la
   vista, que marca el input correspondiente. El dominio no conoce el formulario,
@@ -94,14 +100,14 @@ El monto debe estar entre $5.000.000 y $120.000.000 para Crédito Vehículo.
 ```js
 static assessAffordability(application, product) {
   const { amount, term } = application.requestedCredit;
-  const monthlyRate = product.interestRate.monthlyFraction;
-  const n = term.months;
 
-  // Cuota fija (sistema francés): C = P * i / (1 - (1+i)^-n)
-  const estimatedInstallment =
-    monthlyRate === 0
-      ? amount.amount / n
-      : (amount.amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -n));
+  // La fórmula de la cuota vive en CreditSimulationService y solo ahí: aquí
+  // se consume para que la solicitud y el simulador no puedan discrepar.
+  const estimatedInstallment = CreditSimulationService.monthlyInstallmentAmount(
+    amount.amount,
+    product.interestRate.monthlyFraction,
+    term.months,
+  );
 
   const ceiling = application.employmentInfo.maxAffordableInstallment.amount;
 
@@ -119,10 +125,16 @@ Composición de tres reglas que viven en tres sitios distintos:
 |---|---|
 | Tasa mensual equivalente a partir de la E.A. | `InterestRate.monthlyFraction` |
 | Techo de cuota = 40 % del ingreso | `EmploymentInfo.maxAffordableInstallment` |
-| Cuota fija del sistema francés | Aquí (cruza monto, plazo y tasa) |
+| Cuota fija del sistema francés | `CreditSimulationService.monthlyInstallmentAmount` |
 
-El caso `monthlyRate === 0` evita una división por cero: con tasa 0 la cuota es
-simplemente capital entre número de cuotas.
+Este método **no** reimplementa la cuota: la pide. Antes la fórmula estaba
+escrita aquí y volvió a hacer falta al construir el simulador; duplicarla habría
+permitido que la cifra del estudio de capacidad de pago y la del simulador se
+separaran con cualquier ajuste posterior. Verificado en la suite:
+
+```
+ok  : CreditApplicationPolicy y el simulador comparten la fórmula de la cuota
+```
 
 **No lanza**: devuelve un informe. Superar el 40 % no invalida la solicitud, es
 un aviso para el estudio. La diferencia entre "no se puede" y "hay que mirarlo"
@@ -133,6 +145,98 @@ Resultado real de la suite (50 M a 60 meses al 14,2 % E.A., ingreso 3,5 M):
 ```
 cuota estimada: 1146680 | tope: 1400000 | viable: true
 ```
+
+---
+
+### `CreditSimulationService`
+
+`src/domain/services/CreditSimulationService.js` · stateless, métodos estáticos,
+sin dependencias.
+
+Cruza `CreditProduct` × `Money` × `Term`: dado un producto, un capital y un
+plazo, produce el `AmortizationPlan` completo. Es el **único sitio del proyecto
+donde vive la fórmula de la cuota**.
+
+#### `simulate(product, amount, term)`
+
+```js
+static simulate(product, amount, term) {
+  CreditSimulationService.assertSimulable(product, amount, term);
+
+  const monthlyRate = product.interestRate.monthlyFraction;
+  const installmentAmount = Math.round(
+    CreditSimulationService.monthlyInstallmentAmount(amount.amount, monthlyRate, term.months),
+  );
+
+  return AmortizationPlan.of({
+    principal: amount,
+    interestRate: product.interestRate,
+    term,
+    installment: Money.of(installmentAmount, amount.currency),
+    schedule: CreditSimulationService.#buildSchedule({ … }),
+  });
+}
+```
+
+#### `monthlyInstallmentAmount(principal, monthlyRate, months)`
+
+Cuota fija del sistema francés, **sin redondear**:
+
+```
+C = P · i / (1 - (1 + i)^-n)
+```
+
+Con `i = 0` degenera en el reparto lineal `P / n`, lo que evita una división por
+cero. Es un método público y no un detalle privado porque tiene **dos
+consumidores**: la simulación y `CreditApplicationPolicy.assessAffordability`.
+
+#### Redondeo: la última cuota absorbe el residuo
+
+`Money` guarda enteros, así que cada cuota y cada interés se redondean al peso.
+Repetido 240 veces eso acumula un descuadre. La decisión:
+
+```js
+for (let number = 1; number <= months; number += 1) {
+  const interest = Math.round(balance * monthlyRate);
+
+  let capital;
+  if (number === months) {
+    capital = balance;                      // liquida el saldo y absorbe el residuo
+  } else {
+    capital = installmentAmount - interest;
+    if (capital > balance) capital = balance;   // blindaje ante la deriva
+  }
+
+  balance -= capital;
+  schedule.push(Installment.of({ … }));
+}
+```
+
+Es lo que hace la banca, y garantiza las dos invariantes que `AmortizationPlan`
+comprueba después: la suma de capital es exactamente el capital prestado y el
+saldo final es cero.
+
+Verificado con el catálogo real:
+
+| Producto | Capital | Plazo | Cuota | Última cuota | Saldo final |
+|---|---|---|---|---|---|
+| Libre Inversión (18,5 % E.A.) | $10.000.000 | 36 m | $357.000 | $356.984 | $0 |
+| Vivienda (11,8 % E.A.) | $300.000.000 | 240 m | $3.138.761 | $3.139.123 | $0 |
+
+Si la cuota no alcanzara a cubrir los intereses —el crédito nunca se
+amortizaría— se lanza `NON_AMORTIZING_INSTALLMENT` en vez de producir una tabla
+sin sentido.
+
+#### `productFieldErrors(product, amount, term)`
+
+Devuelve el mapa `campo → mensaje` de los desencajes entre lo pedido y lo que el
+producto ofrece. **Devuelve en vez de lanzar** porque hay dos consumidores que
+necesitan el mismo diagnóstico con distinto encabezado: `assertSimulable` (que sí
+lanza, con "No se puede simular con esos datos") y
+`CreditApplicationPolicy.assertAdmissible`.
+
+Las claves son `amount` y `termInMonths`: los mismos `name` de los campos del
+formulario, para que el `ValidationError` llegue intacto hasta el input correcto.
 
 ---
 
@@ -313,6 +417,14 @@ export class DomainError extends Error {
 | `APPLICATION_STATUS_UNKNOWN` | `CreditApplication` | Estado fuera del enum |
 | `APPLICATION_ALREADY_SUBMITTED` | `CreditApplication.submit()` | Doble envío |
 | `APPLICATION_INVALID_TRANSITION` | `CreditApplication.moveToReview()` | Transición no permitida |
+| `INSTALLMENT_NOT_BALANCED` | `Installment` | La cuota no es interés + capital |
+| `INVALID_INSTALLMENT_NUMBER` · `INVALID_INSTALLMENT_AMOUNT` | `Installment` | Nº no entero >0 · importe que no es `Money` |
+| `PLAN_LENGTH_MISMATCH` · `PLAN_OUT_OF_ORDER` | `AmortizationPlan` | Nº de cuotas ≠ plazo · numeración con huecos |
+| `PLAN_CAPITAL_MISMATCH` · `PLAN_NOT_SETTLED` | `AmortizationPlan` | El capital no cuadra · el saldo final no es cero |
+| `INVALID_PLAN_PRINCIPAL` · `INVALID_PLAN_RATE` · `INVALID_PLAN_TERM` · `INVALID_PLAN_INSTALLMENT` · `INVALID_PLAN_SCHEDULE` | `AmortizationPlan` | Argumento del tipo equivocado |
+| `SIMULATION_PRODUCT_REQUIRED` · `SIMULATION_AMOUNT_INVALID` · `SIMULATION_TERM_INVALID` | `CreditSimulationService` | Argumento del tipo equivocado |
+| `NON_AMORTIZING_INSTALLMENT` | `CreditSimulationService` | La cuota no cubre los intereses |
+| `INVALID_INSTALLMENT_COUNT` | `CreditSimulationService` | Número de cuotas ≤ 0 |
 | `VALIDATION_ERROR` | `ValidationError` | Uno o más campos inválidos |
 | `NOT_IMPLEMENTED` | `NotImplementedError` | Método abstracto invocado |
 | `CONTRACT_VIOLATION` | `ContractViolationError` | Adaptador incompleto |

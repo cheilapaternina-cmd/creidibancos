@@ -534,8 +534,8 @@ container.register('productRepository', (c) =>
 );
 ```
 
-**Eso es todo.** No cambian: los 5 casos de uso, los 4 controladores, las 6
-vistas, las 2 entidades, los 8 value objects, el mapper, el router.
+**Eso es todo.** No cambian: los 6 casos de uso, los 4 controladores, las 6
+vistas, las 2 entidades, los 10 value objects, el mapper, el router.
 
 Si el formato de la API difiere del datasource, se ajusta `CreditProductFactory`
 (o se crea una segunda factory y se elige en el adaptador). El dominio no se

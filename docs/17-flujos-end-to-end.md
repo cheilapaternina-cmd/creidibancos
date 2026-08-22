@@ -26,7 +26,7 @@ Navegador carga index.html
         │     └─ registra 32 factorías perezosas (nada se construye aún)
         │
         ├─ 3. container.eagerResolveAll()
-        │     ├─ construye las 32 dependencias en orden de necesidad
+        │     ├─ construye las 34 dependencias en orden de necesidad
         │     ├─ assertImplements() verifica cada adaptador contra su puerto
         │     ├─ UrlBuilder.detectBasePath() → '/crediSmart/'
         │     └─ un contrato roto lanza ContractViolationError AQUÍ
@@ -46,7 +46,7 @@ Navegador carga index.html
                     └─► flujo 17.2
 ```
 
-Verificado: `ok : contenedor resuelto (32 dependencias)`,
+Verificado: `ok : contenedor resuelto (34 dependencias)`,
 `ok : basePath autodetectado (/crediSmart/)`.
 
 ---

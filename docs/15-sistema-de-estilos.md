@@ -7,12 +7,12 @@
 El original usaba Tailwind: 70 KB de CSS generado y clases atómicas en el marcado
 (`className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50"`).
 
-Aquí hay **1 466 líneas de CSS semántico** en 7 archivos, con la paleta exacta
+Aquí hay **1 681 líneas de CSS semántico** en 7 archivos, con la paleta exacta
 extraída de la hoja compilada del original y guardada en variables.
 
 | | Original (Tailwind) | Aquí |
 |---|---|---|
-| Tamaño | 70 KB generados | 1 466 líneas, sin build |
+| Tamaño | 70 KB generados | 1 681 líneas, sin build |
 | Marcado | `class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50"` | `class="navbar"` |
 | Cambiar el fondo de la navbar | Editar la clase en cada página que la repite | Una línea en `05-components.css` |
 | Dependencias | PostCSS + Tailwind + config | ninguna |
@@ -38,7 +38,7 @@ Los 7 archivos se cargan en `index.html` en orden de especificidad creciente:
 | 03 | `base.css` | `html`/`body`, foco, spinner, `sr-only`, utilidades tipográficas | Elementos y utilidades mínimas |
 | 04 | `layout.css` | `.page`, `.container`, `.section`, grids, stacks | Estructura, sin color |
 | 05 | `components.css` | Navbar, botones, tarjetas, panel, alerta, formularios, footer, toasts | Componentes reutilizables |
-| 06 | `pages.css` | Hero, simulador, formulario, 404, acceso restringido | Específico de una vista |
+| 06 | `pages.css` | Hero, simulador (cálculo, resultado, amortización), formulario, 404, acceso restringido | Específico de una vista |
 | 07 | `responsive.css` | Breakpoints `sm`/`lg` + `print` | **Todas** las media queries |
 
 Consecuencia práctica: **no se necesita un solo `!important`**. Si una regla de
@@ -266,6 +266,7 @@ algunas utilidades" y "CSS atómico".
   .brand__tagline { display: inline; }      /* "by FinTech Solutions" aparece */
   .grid-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid-form, .filters__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sim-result__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero__title { font-size: var(--text-5xl); line-height: 1.1; }
   .form-actions { flex-direction: row; }
 }
@@ -273,8 +274,13 @@ algunas utilidades" y "CSS atómico".
 @media (min-width: 1024px) {                /* lg */
   .container { padding-inline: var(--space-8); }
   .grid-products { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .panel--simulator .grid-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sim-result__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 ```
+
+Los tres campos del simulador (producto, monto, plazo) caben en una fila solo en
+`lg`; las cuatro métricas del resultado van 1 → 2 → 4 columnas.
 
 Correspondencia con el original: `sm:grid-cols-2 lg:grid-cols-3` en el grid,
 `hidden sm:inline` en la etiqueta de la marca, `flex-col sm:flex-row` en los
@@ -302,6 +308,71 @@ El primero corrige un desbordamiento real del original en pantallas de 320–400
 El segundo permite imprimir el catálogo como ficha de producto: se ocultan navbar,
 footer, botones y avisos. Es el **único** `!important` del proyecto, y en un
 contexto donde es la práctica habitual.
+
+### El bloque del simulador
+
+`06-pages.css` cierra con ~200 líneas para las tres piezas del simulador. Tres
+decisiones que merecen nota:
+
+**1. El panel de resultado hereda el tema del producto.**
+
+```css
+.sim-result {
+  background-image: linear-gradient(
+    135deg,
+    var(--product-grad-from, var(--color-blue-600)),
+    var(--product-grad-to, var(--color-blue-800))
+  );
+}
+```
+
+La vista le pone la clase `theme-*` que viene en el DTO y el degradado sale solo,
+igual que en las tarjetas de producto. Simular un crédito de vivienda pinta el
+panel en violeta sin una línea de JavaScript de por medio. El valor de reserva
+del `var()` evita un panel transparente si algún día llega un producto sin tema.
+
+**2. La tabla scrollea ella, no la página.**
+
+```css
+.sim-schedule__scroll {
+  max-height: 26rem;
+  overflow: auto;
+}
+
+.sim-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+```
+
+240 filas dentro de un contenedor con altura máxima y encabezado pegajoso. Sin
+esto, el detalle mensual de un crédito de vivienda haría scrollear el documento
+entero y el usuario perdería de vista qué columna está leyendo.
+
+**3. Cifras alineadas para poder compararlas.**
+
+```css
+.sim-table {
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-table tbody td { text-align: right; }
+```
+
+`tabular-nums` fuerza el ancho fijo de dígito, así las columnas de dinero quedan
+alineadas verticalmente aunque cambie el número de cifras. Con números
+proporcionales una tabla de importes se lee mal.
+
+El estado activo de los dos botones de modo es la única clase de estado nueva:
+
+```css
+.btn--system.is-active {
+  color: var(--color-white);
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+```
 
 ## 15.7 Accesibilidad en CSS
 

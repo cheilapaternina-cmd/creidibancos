@@ -284,8 +284,8 @@ Resumen:
 2. `src/config/AppConfig.js` — añadir `apiBaseUrl: '/api'`.
 3. `src/config/dependencies.js` — cambiar **una línea** de registro.
 
-**No cambian**: los 5 casos de uso, los 4 controladores, las 6 vistas, las 2
-entidades, los 8 value objects, el mapper, el router, el CSS.
+**No cambian**: los 6 casos de uso, los 4 controladores, las 6 vistas, las 2
+entidades, los 10 value objects, el mapper, el router, el CSS.
 
 Si el formato de la API difiere del datasource, se ajusta `CreditProductFactory` —
 que es precisamente para lo que existe.

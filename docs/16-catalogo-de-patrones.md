@@ -14,12 +14,12 @@ Los 14 patrones aplicados. Para cada uno: qué problema resuelve, dónde está, 
 | 3 | MVC | Arquitectónico | `presentation/` |
 | 4 | Dependency Injection + Composition Root | Estructural | `config/Container.js`, `config/dependencies.js` |
 | 5 | Repository | Estructural | 3 repositorios + sus 2 puertos |
-| 6 | Value Object | De dominio | 8 archivos en `domain/valueobjects/` |
+| 6 | Value Object | De dominio | 10 archivos en `domain/valueobjects/` |
 | 7 | Entity + Always-Valid Domain Model | De dominio | `CreditProduct`, `CreditApplication` |
-| 8 | Domain Service | De dominio | `CreditApplicationPolicy` |
+| 8 | Domain Service | De dominio | `CreditApplicationPolicy`, `CreditSimulationService` |
 | 9 | Specification / Criteria | De dominio | `ProductSearchCriteria` |
 | 10 | Factory + Anticorruption Layer | Creacional | `CreditProductFactory` |
-| 11 | Data Mapper + DTO | Estructural | `CreditProductMapper`, `CreditApplicationMapper`, `CreditProductDTO` |
+| 11 | Data Mapper + DTO | Estructural | `CreditProductMapper`, `SimulationMapper`, `CreditApplicationMapper`, `CreditProductDTO`, `SimulationDTO` |
 | 12 | Template Method | De comportamiento | `BaseView`, `BaseController` |
 | 13 | Decorator | Estructural | `DocumentTitleController` |
 | 14 | Result / Either | De comportamiento | `application/shared/Result.js` |
@@ -92,7 +92,7 @@ implementación concreta y son imposibles de probar en aislamiento.
 **Solución.** Todo entra por constructor. Un único archivo ensambla el grafo.
 
 **Dónde.** `config/Container.js` (contenedor: factorías perezosas, singletons por
-clave, detección de ciclos) y `config/dependencies.js` (las 32 dependencias).
+clave, detección de ciclos) y `config/dependencies.js` (las 34 dependencias).
 
 **Sin él.**
 
@@ -187,13 +187,20 @@ las dos sin que una conozca a la otra.
 **Solución.** Un servicio stateless que las coordina, delegando en el
 comportamiento de cada una.
 
-**Dónde.** `CreditApplicationPolicy`: `assertAdmissible` (solicitud × producto) y
-`assessAffordability` (compone tres reglas de tres sitios distintos).
+**Dónde.** Dos, uno por cada regla que cruza conceptos:
+
+- `CreditApplicationPolicy`: `assertAdmissible` (solicitud × producto) y
+  `assessAffordability` (compone tres reglas de tres sitios distintos).
+- `CreditSimulationService`: `simulate` (producto × monto × plazo → plan de
+  amortización). Es el único sitio del proyecto con la fórmula de la cuota, y la
+  política la consume desde ahí en vez de repetirla.
 
 **Cuidado.** Es el patrón más fácil de sobreusar. Un servicio por entidad
 (`CreditProductService`, `ApplicationService`) produce el *anemic domain model*:
-entidades sin comportamiento y servicios con toda la lógica. Aquí hay **un solo**
-servicio de dominio, porque solo hay una regla que cruza entidades.
+entidades sin comportamiento y servicios con toda la lógica. Aquí hay **dos**
+servicios de dominio porque hay exactamente dos reglas que cruzan conceptos, y
+ambos delegan en el comportamiento de las entidades (`admitsAmount`,
+`admitsTerm`, `monthlyFraction`) en vez de reimplementarlo.
 
 Detalle: [09](./09-dominio-servicios-criterios-errores.md).
 
@@ -340,7 +347,7 @@ hace que el flujo feliz y el de error se lean distinto.
 **Solución.** El caso de uso devuelve un objeto que representa éxito o fallo, con
 los errores por campo como dato.
 
-**Dónde.** `application/shared/Result.js`, devuelto por los 5 casos de uso.
+**Dónde.** `application/shared/Result.js`, devuelto por los 6 casos de uso.
 
 ```js
 const result = await this.#submitApplication.execute(values);

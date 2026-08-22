@@ -95,7 +95,7 @@ sombra, radio y breakpoint — es idéntico.
           (7 archivos, cascada)          (bootstrap)
                                                 │
                                     config/dependencies.js
-                                    (Composition Root: 32 deps)
+                                    (Composition Root: 34 deps)
                                                 │
         ┌───────────────────────┬───────────────┴────────┬──────────────────┐
         │                       │                        │                  │
@@ -106,13 +106,16 @@ sombra, radio y breakpoint — es idéntico.
   ├ CatalogController    SearchCreditProducts     CreditApplication  StaticAmountRangeProvider
   ├ SimulatorController  GetAmountRangeFilters     Money · Term       LocalStorageCreditApp…
   ├ ApplicationCtrl      GetCreditProductNames     InterestRate       IntlMoneyFormatter
-  └ NotFoundController   SubmitCreditApplication   AmountRange        SystemClock
-        │                       │                  ProductTheme       CryptoIdGenerator
-  6 vistas                 Result · DTOs           Applicant          ConsoleLogger
-  4 componentes            2 mappers               RequestedCredit    ToastNotifier
-  1 decorador                                      EmploymentInfo     HistoryRouter
-  ViewRenderer                                     ProductSearchCriteria
-  UrlBuilder · Html                                CreditApplicationPolicy
+  └ NotFoundController   SimulateCredit            AmountRange        SystemClock
+        │                SubmitCreditApplication   ProductTheme       CryptoIdGenerator
+  6 vistas                       │                 Applicant          ConsoleLogger
+  4 componentes            Result · 2 DTOs         RequestedCredit    ToastNotifier
+  1 decorador              3 mappers               EmploymentInfo     HistoryRouter
+  ViewRenderer                                     Installment
+  UrlBuilder · Html                                AmortizationPlan
+                                                   ProductSearchCriteria
+                                                   CreditApplicationPolicy
+                                                   CreditSimulationService
                                                    4 errores · 7 puertos
 ```
 
@@ -135,13 +138,14 @@ crediSmart/
 │   ├── 03-base.css                Elementos base + utilidades tipográficas
 │   ├── 04-layout.css              Contenedores, secciones, grids
 │   ├── 05-components.css          Navbar, botones, cards, formularios, toasts
-│   ├── 06-pages.css               Hero, simulador, formulario, 404, acceso
+│   ├── 06-pages.css               Hero, simulador (cálculo, resultado,
+│   │                              amortización), formulario, 404, acceso
 │   └── 07-responsive.css          Breakpoints sm/lg + print
 │
 └── src/
     ├── main.js                    BOOTSTRAP
-    ├── domain/                    23 archivos — núcleo, cero deps externas
-    ├── application/               12 archivos — casos de uso
+    ├── domain/                    26 archivos — núcleo, cero deps externas
+    ├── application/               15 archivos — casos de uso
     ├── infrastructure/            11 archivos — adaptadores
     ├── presentation/              22 archivos — MVC
     └── config/                     4 archivos — Composition Root

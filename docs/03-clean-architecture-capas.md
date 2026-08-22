@@ -93,7 +93,7 @@ domain/
 ├── valueobjects/    Money · InterestRate · Term · AmountRange · ProductTheme
 │                    Applicant · RequestedCredit · EmploymentInfo
 ├── criteria/        ProductSearchCriteria (patrón Specification)
-├── services/        CreditApplicationPolicy (reglas que cruzan entidades)
+├── services/        CreditApplicationPolicy · CreditSimulationService
 └── errors/          DomainError · ValidationError
                      NotImplementedError · ContractViolationError
 ```
@@ -183,7 +183,7 @@ config/
 ├── AppConfig.js      Locale, moneda, nivel de log, basePath, timeouts, selectores
 ├── routes.js         ROUTES · ROUTE_TABLE · FALLBACK_CONTROLLER (constantes puras)
 ├── Container.js      Contenedor DI: singletons perezosos + detección de ciclos
-└── dependencies.js   buildContainer(): el grafo completo de 32 dependencias
+└── dependencies.js   buildContainer(): el grafo completo de 34 dependencias
 ```
 
 ## 3.5 Flujo de dependencias ≠ flujo de control

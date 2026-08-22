@@ -50,15 +50,15 @@ Puerto de SALIDA    →   el núcleo llama al exterior
    HistoryRouter        │                               │      InMemoryCreditProductRepository
    (History API)  ──┐   │    ┌─────────────────────┐    │  ┌── implementa ICreditProductRepository
                     │   │    │    APLICACIÓN       │    │  │
-   Controladores    ├──►│    │  5 casos de uso     │◄───┼──┤   StaticAmountRangeProvider
+   Controladores    ├──►│    │  6 casos de uso     │◄───┼──┤   StaticAmountRangeProvider
    (MVC)            │   │    │  Result · mappers   │    │  │   implementa IAmountRangeProvider
                     │   │    └──────────┬──────────┘    │  │
    Vistas + DOM   ──┘   │               │               │  ├── LocalStorageCreditApplicationRepository
    (eventos)            │    ┌──────────▼──────────┐    │  │   implementa ICreditApplicationRepository
                         │    │      DOMINIO        │    │  │
                         │    │  2 entidades        │    │  ├── IntlMoneyFormatter
-                        │    │  8 value objects    │    │  │   implementa IMoneyFormatter
-                        │    │  1 servicio         │    │  │
+                        │    │  10 value objects    │    │  │   implementa IMoneyFormatter
+                        │    │  2 servicios        │    │  │
                         │    │  1 criterio         │    │  ├── SystemClock            → IClock
                         │    │  4 errores          │    │  ├── CryptoIdGenerator      → IIdGenerator
                         │    │  7 PUERTOS          │    │  ├── ConsoleLogger          → ILogger

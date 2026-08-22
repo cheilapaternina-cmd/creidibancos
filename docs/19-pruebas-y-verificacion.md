@@ -13,11 +13,11 @@ tests/
 
 | Suite | Qué cubre | Dependencias | Aserciones |
 |---|---|---|---|
-| 01 | Value objects, entidades, política de dominio, criterios, los 5 casos de uso, repositorios | **ninguna** | 41 |
-| 02 | `Html.js`, las 5 vistas, componentes, `UrlBuilder`, router, contratos, contenedor | **ninguna** | 62 |
-| 03 | Arranque completo, navegación, filtros en vivo, formulario, persistencia, 404 | jsdom (solo pruebas) | 43 |
+| 01 | Value objects, entidades, servicios de dominio, simulación, criterios, los 6 casos de uso, repositorios | **ninguna** | 85 |
+| 02 | `Html.js`, las 5 vistas, el simulador, componentes, `UrlBuilder`, router, contratos, contenedor | **ninguna** | 89 |
+| 03 | Arranque completo, navegación, simulador en vivo, filtros, formulario, persistencia, 404 | jsdom (solo pruebas) | 66 |
 
-Total: **146 aserciones**, todas en verde.
+Total: **240 aserciones**, todas en verde.
 
 Ejecución:
 
@@ -103,6 +103,36 @@ primer nombre extraído, capacidad de pago calculada, persistencia; monto fuera 
 rango → rechazado por `CreditApplicationPolicy` con el mensaje literal; email
 inválido y destino corto → rechazados.
 
+**Simulación de crédito** (22 aserciones). Las cifras de referencia se calcularon
+aparte y se comprueban literalmente:
+
+| Caso | Comprobación |
+|---|---|
+| Libre Inversión · $10.000.000 · 36 m · 18,5 % E.A. | cuota exacta de **$357.000** |
+| — | la suma de los abonos a capital es exactamente $10.000.000 |
+| — | la última cuota ($356.984) difiere: absorbe el residuo del redondeo |
+| — | `totalPaid = capital + totalInterest` |
+| — | el interés del mes 1 se calcula sobre el saldo inicial y decrece después |
+| Vivienda · $300.000.000 · **240 m** · 11,8 % E.A. | el capital sigue cuadrando al peso y el saldo cierra en cero |
+| — | `yearlySummary()` produce 20 bloques que conservan el capital total |
+| Tasa 0 % | degenera en el reparto lineal `P / n` |
+| Fórmula compartida | `CreditApplicationPolicy` y el simulador dan la misma cuota |
+
+El caso de 240 meses no es decorativo: es donde la deriva del redondeo se acumula
+y donde un reparto mal hecho dejaría un saldo final distinto de cero.
+
+Invariantes que deben **rechazarse**: plazo mayor que el máximo del producto
+(`VALIDATION_ERROR` con `termInMonths`), monto fuera de rango (con `amount`), una
+`Installment` cuya cuota no sea interés + capital (`INSTALLMENT_NOT_BALANCED`) y
+un `AmortizationPlan` con menos cuotas que meses (`PLAN_LENGTH_MISMATCH`).
+
+**`SimulateCreditUseCase`** (22 aserciones): simula con la entrada en texto tal
+como llega del formulario; el DTO trae los importes como números planos, sin
+métodos y congelado en profundidad; y el caso de uso **nunca lanza** — producto
+inexistente, monto vacío, plazo cero, monto y plazo inválidos a la vez (que se
+reportan juntos), monto fuera de rango y llamada sin argumentos devuelven todos
+un `Result` de fallo con sus `fieldErrors`.
+
 ### Salida real
 
 ```
@@ -181,14 +211,37 @@ corresponde al último abierto.
 `aria-current="page"`, requisitos visibles, botón "Ver detalles", footer con el
 texto largo, clases de tema, emojis.
 
-**Simulador**: título y subtítulo, placeholder
+**Simulador — filtro del catálogo**: título y ambos subtítulos, placeholder
 *"Ej: Crédito Vehículo..."*, botones *"🔍 Buscar"* y *"Limpiar"*, tarjetas
 compactas, **ausencia** de requisitos y de "Ver detalles", el aviso con
-`<strong>estáticos</strong>`, contador ausente cuando `isFiltered` es false y
+`<strong>estático</strong>`, contador ausente cuando `isFiltered` es false y
 presente cuando es true, valor buscado conservado, estado vacío.
 
 Las aserciones negativas importan tanto como las positivas: son las que verifican
 que la variante compacta *es* distinta.
+
+**Simulador — cálculo**: el `SimulationDTO` que se pinta lo produce el mismo
+`SimulateCreditUseCase` que usa la aplicación, no un objeto inventado para la
+prueba. Se comprueban los tres campos, el botón, que los inputs hereden los
+límites del producto (`min="1000000"`, `max="30000000"`, `max="60"`), y que la
+cuota, el total de intereses, el total a pagar y la tasa mensual aparezcan con el
+valor exacto del DTO.
+
+Y una aserción negativa que vigila la regla de la capa:
+
+```js
+ok(!/Math\.(pow|round)/.test(simulatorHtml), 'la vista no filtra cálculos al HTML');
+```
+
+**Simulador — tabla de amortización**: plegada por defecto (`aria-expanded="false"`
+y sin `.sim-table`), el botón anuncia *"(36 cuotas)"*; en modo anual hay **3 filas**
+para 36 meses y el primer bloque dice *"Cuotas 1–12"*; en modo mensual hay **36**.
+El recuento se hace contando `<tr>` dentro de `<tbody>`, no sobre el HTML entero.
+
+**Simulador — errores**: el mensaje del dominio se pinta bajo su campo, el control
+recibe `is-invalid` y `aria-invalid="true"`, y —lo que importa— la última cuota
+válida **sigue en pantalla** mientras se corrige. Sin simulación, en su lugar se
+explica qué falta y no se pinta tabla alguna.
 
 **Formulario**: título y subtítulo, 3 secciones, ambos
 placeholders de select, ambos botones, 11 marcas de obligatorio, opciones de
@@ -266,7 +319,7 @@ window.HTMLElement.prototype.scrollIntoView = () => {};
 ### Qué verifica
 
 **Arranque**: `#root` y `#notifications` presentes en el `index.html` real,
-**32 dependencias** resueltas, `basePath` autodetectado como `/crediSmart/`.
+**34 dependencias** resueltas, `basePath` autodetectado como `/crediSmart/`.
 
 **Catálogo**: renderizado, 6 tarjetas en el DOM real, título del documento
 puesto por el decorador, enlace activo correcto, hero y footer presentes.
@@ -294,6 +347,31 @@ solo pudiera escribir una letra por pulsación, y ninguna otra prueba lo detecta
 Además: filtro por rango → 4 tarjetas, estado vacío con `.alert--empty`, y
 "Limpiar" → 6 tarjetas.
 
+**Simulador en vivo**: es la prueba que demuestra que el simulador *funciona*,
+no que se pinta. Al entrar en la ruta ya hay una simulación hecha
+(`$ 1.000.000 / 12 m` → **$ 91.250**); teclear `10000000` en el monto la
+recalcula a **$ 912.498** sin recargar y sin perder el foco; un monto de
+`99000000` en Libre Inversión marca el campo y muestra *"El monto debe estar
+entre $1.000.000 y $30.000.000"* **conservando** la cuota anterior; cambiar de
+producto reencaja el monto en el rango nuevo; desplegar la tabla da 1 bloque
+anual y 12 filas mensuales, con la última dejando el saldo en `$ 0`; y
+*"Reiniciar"* vuelve al estado de partida.
+
+Dos detalles que hacen falta para que esta prueba sea honesta:
+
+```js
+// Cada interacción re-renderiza la vista entera y sustituye los nodos: guardar
+// una referencia entre pasos daría un elemento huérfano sin listeners.
+const $sim = (id) => document.getElementById(id);
+
+// El formateador es-CO separa el símbolo con espacio duro (U+00A0).
+const norm = (text) => String(text ?? '').replace(/\s+/g, ' ').trim();
+```
+
+La primera versión de la prueba fallaba en seis aserciones por guardar
+`const amountInput = …` y reutilizarlo tras un re-render: el nodo ya no estaba en
+el documento y el evento no llegaba a ningún sitio.
+
 **Formulario**: 3 secciones, selects con el número correcto de opciones;
 envío vacío → **11 campos con `.is-invalid`** y toast con `role="alert"`; envío
 válido → cero errores, toast de éxito con radicado `CS-XXXXXXXX` y saludo por el
@@ -317,12 +395,24 @@ visible, título correcto; y navegar a `/` restaura el hero y las 6 tarjetas.
 ```
 --- Arranque ---
 ok  : contenedor #root encontrado en index.html
-ok  : grafo completo resuelto (32 dependencias)
+ok  : grafo completo resuelto (34 dependencias)
 ok  : basePath autodetectado (/crediSmart/)
 
 --- Navegación sin recarga ---
 ok  : URL cambiada sin recarga (/crediSmart/simulador)
 ok  : título actualizado por el decorador
+
+--- Simulador: cálculo sobre el DOM real ---
+ok  : arranca en el monto mínimo del primer producto (1000000)
+ok  : simula al entrar en la ruta ($ 91.250)
+ok  : recalcula al teclear el monto ($ 912.498)
+ok  : foco conservado en el monto (sim-amount)
+ok  : monto fuera de rango marca el campo
+ok  : se conserva la última cuota válida mientras se corrige
+ok  : el monto sube al mínimo del producto elegido (5000000)
+ok  : detalle mensual: 12 filas (12)
+ok  : la última fila deja el saldo en cero ($ 0)
+ok  : reiniciar restaura la simulación inicial ($ 91.250)
 
 --- Filtros del simulador ---
 ok  : búsqueda "vivienda" → 1 tarjeta (1)
