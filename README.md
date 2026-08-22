@@ -68,23 +68,23 @@ o en un subdirectorio. Para fijarlo a mano: `AppConfig.basePath`.
 Se extrajo el bundle de producción (`/assets/index-*.js`, 414 KB minificados) y
 se reconstruyó su contenido literal:
 
-| Original | Aquí |
-|---|---|
-| Ruta `/` — Catálogo | `CatalogView` + `CatalogController` |
-| Ruta `/simulador` — Simulador | `SimulatorView` + `SimulatorController` |
-| Ruta `/solicitar` — Solicitud | `ApplicationView` + `ApplicationController` |
-| Ruta `*` — 404 (paleta slate, "Go Home") | `NotFoundView` + `NotFoundController` |
-| Pantalla de sistema "Access Restricted" | `AccessRestrictedView` |
-| Spinner de carga inicial | `.app-boot` + `.spinner` en `index.html` |
-| `ScrollToTop` (scroll al inicio / al ancla) | `ViewRenderer` + `HistoryRouter#applyHashScroll` |
-| Navbar sticky, marca `Credit`+`Smart`, "by FinTech Solutions" | `NavbarComponent` |
-| Hero azul con degradado y dos CTA | `CatalogView#hero` |
-| 6 productos con montos, tasas, plazos, requisitos, emoji y paleta | `StaticCreditProductDataSource` |
-| 5 rangos de monto del filtro | `STATIC_AMOUNT_RANGES` |
-| Plazos 12/24/36/48/60 meses | `STATIC_TERM_OPTIONS` |
-| Formato `Intl.NumberFormat('es-CO', COP, 0 decimales)` | `IntlMoneyFormatter` |
-| Footer (dos variantes de margen y texto) | `FooterComponent` |
-| Paleta Tailwind completa usada en el diseño | `assets/css/02-tokens.css` |
+| Original                                                          | Aquí                                             |
+| ----------------------------------------------------------------- | ------------------------------------------------ |
+| Ruta `/` — Catálogo                                               | `CatalogView` + `CatalogController`              |
+| Ruta `/simulador` — Simulador                                     | `SimulatorView` + `SimulatorController`          |
+| Ruta `/solicitar` — Solicitud                                     | `ApplicationView` + `ApplicationController`      |
+| Ruta `*` — 404 (paleta slate, "Go Home")                          | `NotFoundView` + `NotFoundController`            |
+| Pantalla de sistema "Access Restricted"                           | `AccessRestrictedView`                           |
+| Spinner de carga inicial                                          | `.app-boot` + `.spinner` en `index.html`         |
+| `ScrollToTop` (scroll al inicio / al ancla)                       | `ViewRenderer` + `HistoryRouter#applyHashScroll` |
+| Navbar sticky, marca `Credit`+`Smart`, "by FinTech Solutions"     | `NavbarComponent`                                |
+| Hero azul con degradado y dos CTA                                 | `CatalogView#hero`                               |
+| 6 productos con montos, tasas, plazos, requisitos, emoji y paleta | `StaticCreditProductDataSource`                  |
+| 5 rangos de monto del filtro                                      | `STATIC_AMOUNT_RANGES`                           |
+| Plazos 12/24/36/48/60 meses                                       | `STATIC_TERM_OPTIONS`                            |
+| Formato `Intl.NumberFormat('es-CO', COP, 0 decimales)`            | `IntlMoneyFormatter`                             |
+| Footer (dos variantes de margen y texto)                          | `FooterComponent`                                |
+| Paleta Tailwind completa usada en el diseño                       | `assets/css/02-tokens.css`                       |
 
 **Diferencias deliberadas** (dos, ambas señaladas aquí):
 
@@ -242,11 +242,18 @@ JavaScript no tiene `interface`, así que se implementó con
 `domain/contracts/Contract.js`:
 
 ```js
-export const ILogger = defineContract('ILogger', ['debug', 'info', 'warn', 'error']);
+export const ILogger = defineContract("ILogger", [
+  "debug",
+  "info",
+  "warn",
+  "error",
+]);
 
-class ConsoleLogger extends ILogger { /* ...implementa los 4... */ }
+class ConsoleLogger extends ILogger {
+  /* ...implementa los 4... */
+}
 
-assertImplements(new ConsoleLogger(), ILogger);   // falla en el arranque si no
+assertImplements(new ConsoleLogger(), ILogger); // falla en el arranque si no
 ```
 
 - Los métodos no implementados lanzan `NotImplementedError` al invocarse.
@@ -263,20 +270,20 @@ Contratos declarados: `ICreditProductRepository`,
 
 ### 4.5 SOLID, archivo por archivo
 
-| Principio | Dónde se ve |
-|---|---|
-| **S** Responsabilidad única | Un caso de uso = un método `execute()`. `ViewRenderer` es el único módulo que escribe `innerHTML`. `CreditProductFactory` solo traduce datos crudos. |
-| **O** Abierto/cerrado | `DocumentTitleController` añade el título del documento a **cualquier** controlador sin tocarlo. Añadir un producto = una entrada en el datasource. Añadir un campo al formulario = una entrada en `ApplicationView#sections`. |
-| **L** Sustitución de Liskov | `InMemoryCreditProductRepository` devuelve promesas aunque sea sincrónico, para que un adaptador HTTP lo sustituya sin cambiar a los consumidores. `assertImplements` verifica la sustituibilidad al arrancar. |
-| **I** Segregación de interfaces | Contratos pequeños: `IClock` tiene 2 métodos, `IIdGenerator` 1, `IMoneyFormatter` 2. Nadie depende de métodos que no usa. |
-| **D** Inversión de dependencias | Todo entra por constructor. El único archivo con `new` de clases concretas es `config/dependencies.js`. El dominio define los puertos; la infraestructura los implementa. |
+| Principio                       | Dónde se ve                                                                                                                                                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **S** Responsabilidad única     | Un caso de uso = un método `execute()`. `ViewRenderer` es el único módulo que escribe `innerHTML`. `CreditProductFactory` solo traduce datos crudos.                                                                           |
+| **O** Abierto/cerrado           | `DocumentTitleController` añade el título del documento a **cualquier** controlador sin tocarlo. Añadir un producto = una entrada en el datasource. Añadir un campo al formulario = una entrada en `ApplicationView#sections`. |
+| **L** Sustitución de Liskov     | `InMemoryCreditProductRepository` devuelve promesas aunque sea sincrónico, para que un adaptador HTTP lo sustituya sin cambiar a los consumidores. `assertImplements` verifica la sustituibilidad al arrancar.                 |
+| **I** Segregación de interfaces | Contratos pequeños: `IClock` tiene 2 métodos, `IIdGenerator` 1, `IMoneyFormatter` 2. Nadie depende de métodos que no usa.                                                                                                      |
+| **D** Inversión de dependencias | Todo entra por constructor. El único archivo con `new` de clases concretas es `config/dependencies.js`. El dominio define los puertos; la infraestructura los implementa.                                                      |
 
 ### 4.6 Otros patrones aplicados
 
 - **Value Object** — `Money`, `Term`, `InterestRate`, `AmountRange`,
   `ProductTheme`, `Applicant`, `RequestedCredit`, `EmploymentInfo`:
   inmutables (`Object.freeze`) y auto-validados en el constructor
-  (*always-valid domain model*).
+  (_always-valid domain model_).
 - **Specification / Criteria** — `ProductSearchCriteria.isSatisfiedBy(product)`:
   el mismo criterio filtra hoy en memoria y mañana se traduce a un query HTTP.
 - **Repository** — acceso a datos detrás de un puerto del dominio.
@@ -357,15 +364,15 @@ Qué cubre cada una:
 
 ## 7. Cómo extender
 
-| Quiero… | Toco… |
-|---|---|
+| Quiero…                             | Toco…                                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Cambiar datos estáticos por una API | `dependencies.js`: registrar un `HttpCreditProductRepository` que implemente `ICreditProductRepository`. Nada más. |
-| Añadir un producto | Una entrada en `STATIC_CREDIT_PRODUCTS`. Aparece en catálogo, simulador y en el `<select>` del formulario. |
-| Añadir una paleta de color | `THEME_PALETTES` + una clase `.theme-*` en `02-tokens.css`. |
-| Añadir una página | Vista + controlador + una fila en `ROUTE_TABLE` + su registro en `dependencies.js`. |
-| Añadir un campo al formulario | Una entrada en `ApplicationView#sections` y su validación en el value object correspondiente. |
-| Cambiar de moneda o locale | `AppConfig.locale` / `AppConfig.currency`. |
-| Enviar avisos por otro canal | Un adaptador nuevo de `INotifier`. |
+| Añadir un producto                  | Una entrada en `STATIC_CREDIT_PRODUCTS`. Aparece en catálogo, simulador y en el `<select>` del formulario.         |
+| Añadir una paleta de color          | `THEME_PALETTES` + una clase `.theme-*` en `02-tokens.css`.                                                        |
+| Añadir una página                   | Vista + controlador + una fila en `ROUTE_TABLE` + su registro en `dependencies.js`.                                |
+| Añadir un campo al formulario       | Una entrada en `ApplicationView#sections` y su validación en el value object correspondiente.                      |
+| Cambiar de moneda o locale          | `AppConfig.locale` / `AppConfig.currency`.                                                                         |
+| Enviar avisos por otro canal        | Un adaptador nuevo de `INotifier`.                                                                                 |
 
 Cada fila tiene su receta paso a paso con el código completo en
 [`docs/18-guia-de-extension.md`](./docs/18-guia-de-extension.md).
