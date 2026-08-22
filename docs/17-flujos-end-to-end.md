@@ -133,17 +133,28 @@ Usuario pulsa <a href="/crediSmart/simulador" data-link>Simulador</a>
 [P] DocumentTitleController → document.title = 'CreditSmart — Simulador'
      ▼
 [P] SimulatorController.handle()
-     ├─ #state = { query:'', rangeIndex:0, focusField:null }
-     ├─► [A] GetAmountRangeFiltersUseCase.execute()
-     │        └─► [D] IAmountRangeProvider.all()
-     │                 ▼
-     │            [I] StaticAmountRangeProvider → 5 AmountRange
-     │        └─ Result.ok([{index:0,label:'Todos los montos'}, …])
-     └─► #renderResults({ initial: true })      →  flujo 17.4
+     ├─ #filter = { query:'', rangeIndex:0 }   #schedule = { open:false, mode:'yearly' }
+     ├─► Promise.all([
+     │     [A] GetAmountRangeFiltersUseCase.execute()
+     │          └─► [D] IAmountRangeProvider.all()
+     │                   ▼
+     │              [I] StaticAmountRangeProvider → 5 AmountRange
+     │          └─ Result.ok([{index:0,label:'Todos los montos'}, …]),
+     │
+     │     [A] ListCreditProductsUseCase.execute()     ← catálogo para el <select>
+     │          └─ Result.ok({ products: CreditProductDTO[6] })
+     │   ])
+     ├─ #form = #defaultForm()   → { productId:'1', amount:'1000000', termInMonths:'12' }
+     ├─► #runSimulation()                        →  flujo 17.5
+     └─► #render({ initial: true })
 ```
 
+Entrar en la ruta ya deja una simulación hecha sobre el primer producto: una
+pantalla que arranca vacía no enseña qué hace.
+
 Verificado: `ok : URL cambiada sin recarga (/crediSmart/simulador)`,
-`ok : simulador renderizado`, `ok : 5 opciones de rango`.
+`ok : simulador renderizado`, `ok : 5 opciones de rango`,
+`ok : simula al entrar en la ruta ($ 91.250)`.
 
 ---
 
@@ -262,7 +273,151 @@ Verificado: `ok : "Limpiar" restaura las 6 tarjetas`.
 
 ---
 
-## 17.5 Radicar una solicitud (camino de error)
+## 17.5 Simular un crédito
+
+Usuario teclea `10000000` en el campo de monto, con Libre Inversión (18,5 % E.A.)
+seleccionado y 36 meses de plazo.
+
+```
+[P] SimulatorView — listener 'input' del <input name="amount">
+     ├─ #readSimulation(form) → { amount:'10000000', termInMonths:'36' }
+     └─ handlers.onSimulate(input, 'amount')            ← INTENCIÓN + campo con foco
+     ▼
+[P] SimulatorController.onSimulate({ amount, termInMonths }, 'amount')
+     ├─ #form = { ...#form, amount:'10000000', termInMonths:'36' }
+     ├─ #focusField = 'amount'
+     ▼
+[P] #runSimulation()
+     ▼
+[A] SimulateCreditUseCase.execute({ productId:'1', amount:'10000000', termInMonths:'36' })
+     ├─► [D] ICreditProductRepository.findById('1')
+     │        ▼
+     │   [I] InMemoryCreditProductRepository → CreditProduct 'Crédito Libre Inversión'
+     │
+     ├─► #parse({ amount, termInMonths })            ← forma del dato (aplicación)
+     │        ├─ [D] Money.of(10000000)              → valida finito, no negativo
+     │        └─ [D] Term.ofMonths(36)               → valida entero > 0
+     │        └─ acumula los fallos en un solo ValidationError
+     │
+     ├─► [D] CreditSimulationService.simulate(product, money, term)
+     │        ├─ assertSimulable(...)                ← regla de negocio (dominio)
+     │        │    └─ productFieldErrors(...)
+     │        │         ├─ [D] product.admitsAmount(money)  → true
+     │        │         └─ [D] product.admitsTerm(term)     → true
+     │        │
+     │        ├─ [D] product.interestRate.monthlyFraction
+     │        │       = (1 + 0.185)^(1/12) − 1 = 0.01424575
+     │        │
+     │        ├─ monthlyInstallmentAmount(10_000_000, 0.01424575, 36)
+     │        │       C = P·i / (1 − (1+i)^-n) = 357 000,4…  → Math.round → 357 000
+     │        │
+     │        ├─ #buildSchedule(...)  ← 36 iteraciones
+     │        │    ├─ mes 1:  interés = round(10 000 000 × i) = 142 457
+     │        │    │          capital = 357 000 − 142 457     = 214 543
+     │        │    │          saldo   = 9 785 457
+     │        │    │          [D] Installment.of({...})       → valida cuota = i + k
+     │        │    ├─ …
+     │        │    └─ mes 36: capital = saldo restante        ← absorbe el residuo
+     │        │               pago    = 351 970 + 5 014 = 356 984
+     │        │               saldo   = 0
+     │        │
+     │        └─ [D] AmortizationPlan.of({...})
+     │             ├─ ¿36 cuotas?                        sí
+     │             ├─ ¿numeradas 1..36 en orden?         sí
+     │             ├─ ¿Σ capital = 10 000 000?           sí   ← la invariante del redondeo
+     │             ├─ ¿saldo final = 0?                  sí
+     │             └─ totalPaid = 12 851 984 · totalInterest = 2 851 984
+     │
+     ├─► [A] SimulationMapper.toDTO(plan, product)
+     │        └─ por cada importe: [D] IMoneyFormatter.format(money)
+     │                                  ▼
+     │                             [I] IntlMoneyFormatter → '$ 357.000'
+     │        └─ freezeSimulationDTO({ …, schedule: 36 filas, yearlySummary: 3 bloques })
+     │
+     └─ return Result.ok(SimulationDTO)
+     ▼
+[P] #runSimulation — isSuccess → #simulation = DTO · #errors = {}
+     ▼
+[P] #render({ initial: false })
+     ├─► [A] SearchCreditProductsUseCase.execute(...)   ← el filtro, que no cambió
+     ├─ viewModel = { catalog, form, bounds, simulation, errors, schedule, products, … }
+     ▼
+[P] BaseController.update() → ViewRenderer.refresh(simulatorView, viewModel)
+     ├─ simulatorView.destroy()          ← quita TODOS los listeners anteriores
+     ├─ root.innerHTML = simulatorView.render(viewModel)
+     │    ├─ #simulatorForm(...)   → inputs con min="1000000" max="30000000"
+     │    ├─ #simulationResult(...) → 4 métricas + aviso de la última cuota
+     │    ├─ #amortization(...)     → plegada: solo el botón
+     │    └─ #filters(...)          → el catálogo, intacto
+     ├─ simulatorView.afterRender(root, handlers)
+     │    ├─ #bindSimulator(handlers)   ← listeners nuevos sobre los nodos nuevos
+     │    ├─ #bindFilters(handlers)
+     │    └─ #restoreFocus('amount')    ← el foco vuelve al campo que se estaba tecleando
+     └─ sin scrollTo: update() no mueve la página
+```
+
+**Dónde se decide qué.** Tres validaciones distintas, en tres sitios y por tres
+motivos:
+
+| Comprobación | Capa | Si falla |
+|---|---|---|
+| `'10000000'` es un número | Aplicación (`#parse`) | «Indica cuánto dinero necesitas.» |
+| El importe no es negativo | Dominio (`Money`) | `NEGATIVE_MONEY_AMOUNT` |
+| Libre Inversión admite ese monto | Dominio (`CreditProduct.admitsAmount`) | «El monto debe estar entre $1.000.000 y $30.000.000…» |
+
+Verificado: `ok : recalcula al teclear el monto ($ 912.498)`,
+`ok : foco conservado en el monto (sim-amount)`.
+
+### Variante: monto fuera del rango del producto
+
+Usuario teclea `99000000` con Libre Inversión seleccionado (tope: 30 millones).
+
+```
+[D] CreditSimulationService.assertSimulable(...)
+     └─ productFieldErrors(...) → { amount: 'El monto debe estar entre $1.000.000 y
+                                             $30.000.000 para Crédito Libre Inversión.' }
+     └─ throw ValidationError(errors, 'No se puede simular con esos datos.')
+     ▼
+[A] SimulateCreditUseCase — catch → Result.fromError(err)
+     └─ { isFailure: true, fieldErrors: { amount: '…' } }
+     ▼
+[P] #runSimulation
+     ├─ #errors = { amount: '…' }
+     ├─ #simulation NO se toca                ← la última cuota válida sigue en pantalla
+     └─ hasFieldErrors → no se notifica por toast: el error ya se ve bajo el campo
+     ▼
+[P] la vista pinta is-invalid + aria-invalid + el mensaje en #sim-amount-error
+```
+
+Que `#simulation` no se ponga a `null` es deliberado: borrarla haría parpadear el
+panel en cada tecla intermedia mientras se escribe un número largo.
+
+Verificado: `ok : monto fuera de rango marca el campo`,
+`ok : se conserva la última cuota válida mientras se corrige`.
+
+### Variante: desplegar la tabla de amortización
+
+```
+[P] botón [data-action="toggle-schedule"] → handlers.onToggleSchedule()
+     ▼
+[P] SimulatorController.onToggleSchedule()
+     ├─ #schedule = { open: true, mode: 'yearly' }
+     └─ #render({ initial: false })        ← NO se vuelve a simular: el DTO ya lo tiene todo
+     ▼
+[P] SimulatorView.#yearlyTable(simulation)
+     └─ pinta simulation.yearlySummary (3 bloques), ya agregado por el dominio
+```
+
+Abrir la tabla **no dispara ningún caso de uso**: el `SimulationDTO` ya trae las
+36 filas y los 3 bloques anuales. Cambiar de modo solo cambia cuál de los dos se
+pinta.
+
+Verificado: `ok : detalle mensual: 12 filas (12)`,
+`ok : la última fila deja el saldo en cero ($ 0)`.
+
+---
+
+## 17.6 Radicar una solicitud (camino de error)
 
 Usuario pulsa "✅ Enviar Solicitud" con el formulario vacío.
 
@@ -312,7 +467,7 @@ Verificado: `ok : 11 campos invalidos (11)`, `ok : toast de error mostrado`.
 
 ---
 
-## 17.6 Radicar una solicitud (camino feliz)
+## 17.7 Radicar una solicitud (camino feliz)
 
 Datos: Juan Carlos Pérez · Crédito Vehículo · $50 000 000 · 60 meses ·
 ingreso $3 500 000.
@@ -422,7 +577,7 @@ Verificado: `ok : monto fuera de rango rechazado por politica de dominio`.
 
 ---
 
-## 17.7 Ruta inexistente (404)
+## 17.8 Ruta inexistente (404)
 
 ```
 Usuario entra en /crediSmart/no-existe
@@ -456,7 +611,7 @@ su propio 404 y la app nunca arranca. Ver
 
 ---
 
-## 17.8 Botón atrás del navegador
+## 17.9 Botón atrás del navegador
 
 ```
 Usuario pulsa atrás
@@ -476,7 +631,7 @@ historial en `history.state`. Queda anotado como mejora posible.
 
 ---
 
-## 17.9 Resumen: cuántas capas cruza cada interacción
+## 17.10 Resumen: cuántas capas cruza cada interacción
 
 | Interacción | Capas implicadas | Reglas de negocio ejecutadas |
 |---|---|---|
@@ -484,6 +639,8 @@ historial en `history.state`. Queda anotado como mejora posible.
 | Cargar catálogo | P → A → D → I | Formato monetario |
 | Navegar | I → P → A → D → I | según la ruta destino |
 | Filtrar | P → A → D → I | `matchesName`, `overlaps` |
+| Simular | P → A → D → I | límites del producto + tasa mensual + cuota francesa + 4 invariantes del plan |
+| Desplegar la tabla | P | ninguna: el DTO ya la traía |
 | Enviar formulario (error) | P → A → D | 11 validaciones de campo |
 | Enviar formulario (éxito) | P → A → D → I | 11 validaciones + política + cuota + transición de estado |
 | 404 | I → P | ninguna |
@@ -491,7 +648,7 @@ historial en `history.state`. Queda anotado como mejora posible.
 En **ninguna** de ellas la vista ejecuta una regla de negocio, y en ninguna el
 dominio toca el DOM.
 
-## 17.10 Siguiente lectura
+## 17.11 Siguiente lectura
 
 - [18 — Guía de extensión](./18-guia-de-extension.md)
 - [19 — Pruebas y verificación](./19-pruebas-y-verificacion.md)
