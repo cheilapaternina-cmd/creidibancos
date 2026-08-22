@@ -43,6 +43,10 @@ export class CreditProductMapper {
       annualRateLabel: `${product.interestRate.annualPercentage}%`,
       maxTermMonths: product.maxTerm.months,
       maxTermLabel: `${product.maxTerm.months} meses`,
+      // Cifras crudas además de las etiquetas: el simulador necesita acotar
+      // numéricamente los campos del formulario, no solo mostrar el rango.
+      minAmount: product.minAmount.amount,
+      maxAmount: product.maxAmount ? product.maxAmount.amount : null,
       minAmountLabel: minLabel,
       maxAmountLabel: maxLabel,
       amountRangeLabel: `${minLabel} – ${maxLabel}`,

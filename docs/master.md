@@ -182,26 +182,7 @@ Las tres deben devolver **cero resultados**. Estado actual: **cero**.
 
 ---
 
-## 5. Skill de Claude Code asociado
-
-El patrón de diseño de este proyecto está empaquetado como skill reutilizable:
-
-```
-.claude/skills/arquitectura-hexagonal-vanilla/
-├── SKILL.md                        Instrucciones y reglas del patrón
-└── references/
-    ├── plantillas.md               Plantillas de código por tipo de artefacto
-    ├── checklist-revision.md       Checklist de revisión por capa
-    └── anti-patrones.md            Los 14 errores que rompen la arquitectura
-```
-
-Se invoca con `/arquitectura-hexagonal-vanilla` o se activa solo cuando la
-tarea consiste en crear o extender código en esta arquitectura.
-Detalles en [18 — Guía de extensión](./18-guia-de-extension.md).
-
----
-
-## 6. Índice alfabético de artefactos
+## 5. Índice alfabético de artefactos
 
 Dónde está declarado cada nombre propio del proyecto.
 
@@ -284,20 +265,19 @@ Dónde está declarado cada nombre propio del proyecto.
 
 ---
 
-## 7. Documentos relacionados fuera de `docs/`
+## 6. Documentos relacionados fuera de `docs/`
 
 | Archivo | Contenido |
 |---|---|
 | `../README.md` | Puesta en marcha, qué se replicó del sitio original, resumen de arquitectura |
 | `../.htaccess` | Reescritura SPA para Apache/Laragon, MIME, caché, cabeceras |
 | `../src/config/AppConfig.js` | Todos los valores configurables del sistema |
-| `../.claude/skills/arquitectura-hexagonal-vanilla/SKILL.md` | El patrón, empaquetado como skill |
 | `./iudigital_doc/CreditSmart_Arquitectura_de_la_Solucion.docx` | Documento de arquitectura para la actividad de la IU Digital — **copia de trabajo que se edita a mano** |
 | `./iudigital_doc/generador/` | Scripts que generan ese documento y sus 8 gráficos. Escriben siempre en `..._generado.docx`, nunca sobre la copia editada. Ver su [`README.md`](./iudigital_doc/generador/README.md) |
 
 ---
 
-## 8. Historial de cambios
+## 7. Historial de cambios
 
 Cambios sobre la reconstrucción inicial, con el porqué y lo que costaron.
 

@@ -15,10 +15,6 @@ declaradas explícitamente como contratos.
 > dependencias, el enrutado, los estilos, los flujos end-to-end, las recetas de
 > extensión y las convenciones.
 >
-> El patrón está además empaquetado como skill de Claude Code en
-> [`.claude/skills/arquitectura-hexagonal-vanilla/`](./.claude/skills/arquitectura-hexagonal-vanilla/SKILL.md),
-> con plantillas de código, checklist de revisión y catálogo de antipatrones.
->
 > Para la entrega académica, [`docs/iudigital_doc/`](./docs/iudigital_doc/) contiene
 > el documento de arquitectura en formato Word y los
 > [scripts que lo generan](./docs/iudigital_doc/generador/README.md).
@@ -404,11 +400,4 @@ docs/
 ├── 18-guia-de-extension.md                    10 recetas paso a paso
 ├── 19-pruebas-y-verificacion.md               Las 3 suites
 └── 20-glosario-y-convenciones.md              Vocabulario y convenciones
-
-.claude/skills/arquitectura-hexagonal-vanilla/
-├── SKILL.md                                   El patrón, para aplicarlo
-└── references/
-    ├── plantillas.md                          19 plantillas de código
-    ├── checklist-revision.md                  Checklist por capa
-    └── anti-patrones.md                       Los 14 errores y su corrección
 ```

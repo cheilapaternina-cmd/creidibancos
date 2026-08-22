@@ -16,6 +16,8 @@
  * @property {string} annualRateLabel   Ej. "14.2%"
  * @property {number} maxTermMonths     Ej. 84
  * @property {string} maxTermLabel      Ej. "84 meses"
+ * @property {number} minAmount         Ej. 5000000 — crudo, para acotar inputs
+ * @property {number|null} maxAmount    Ej. 120000000 — `null` si no hay tope
  * @property {string} minAmountLabel    Ej. "$ 5.000.000"
  * @property {string} maxAmountLabel    Ej. "$ 120.000.000"
  * @property {string} amountRangeLabel  Ej. "$ 5.000.000 – $ 120.000.000"

@@ -60,7 +60,7 @@ ok(!!document.querySelector(AppConfig.selectors.notifications),
 
 const container = buildContainer({ config: AppConfig, rootElement });
 container.eagerResolveAll();
-ok(container.keys().length === 32, `grafo completo resuelto (${container.keys().length} dependencias)`);
+ok(container.keys().length === 34, `grafo completo resuelto (${container.keys().length} dependencias)`);
 ok(container.resolve('urlBuilder').basePath === '/crediSmart/',
    `basePath autodetectado (${container.resolve('urlBuilder').basePath})`);
 
@@ -108,6 +108,96 @@ ok(document.title === 'CreditSmart — Simulador', 'título actualizado por el d
 ok(document.querySelector('h1').textContent.trim() === 'Simulador de Crédito', 'simulador renderizado');
 ok(document.querySelectorAll('.product-card--compact').length === 6, 'tarjetas en variante compacta');
 ok(document.querySelectorAll('#filter-range option').length === 5, '5 opciones de rango');
+
+/* ----------------------- Simulador en vivo ----------------------- */
+console.log('');
+console.log('--- Simulador: cálculo sobre el DOM real ---');
+
+// El formateador es-CO separa el símbolo con espacio duro (U+00A0): se
+// normaliza antes de comparar, para no atar la prueba a un byte invisible.
+const norm = (text) => String(text ?? '').replace(/\s+/g, ' ').trim();
+
+// Cada interacción re-renderiza la vista entera y sustituye los nodos: guardar
+// una referencia entre pasos daría un elemento huérfano sin listeners.
+const $sim = (id) => document.getElementById(id);
+const cuota = () => norm(document.querySelector('.sim-metric--highlight .sim-metric__value')?.textContent);
+const teclear = async (id, value) => {
+  const field = $sim(id);
+  field.focus();
+  field.value = value;
+  field.dispatchEvent(new window.Event('input', { bubbles: true }));
+  await tick();
+};
+const pulsar = async (selector) => {
+  document.querySelector(selector)
+    .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await tick();
+};
+
+ok(document.querySelectorAll('#sim-product option').length === 6,
+   `6 productos en el selector (${document.querySelectorAll('#sim-product option').length})`);
+ok($sim('sim-amount').value === '1000000',
+   `arranca en el monto mínimo del primer producto (${$sim('sim-amount').value})`);
+ok($sim('sim-term').value === '12', `arranca en 12 meses (${$sim('sim-term').value})`);
+ok(cuota() === '$ 91.250', `simula al entrar en la ruta (${cuota()})`);
+ok($sim('sim-amount').getAttribute('max') === '30000000', 'el input hereda el tope del producto');
+
+// Cambiar el monto recalcula sin recargar ni perder el foco.
+await teclear('sim-amount', '10000000');
+ok(cuota() === '$ 912.498', `recalcula al teclear el monto (${cuota()})`);
+ok(document.activeElement?.id === 'sim-amount',
+   `foco conservado en el monto (${document.activeElement?.id})`);
+
+// Un monto por encima del tope: error de dominio bajo el campo, y la última
+// cifra válida sigue en pantalla.
+await teclear('sim-amount', '99000000');
+ok($sim('sim-amount').classList.contains('is-invalid'), 'monto fuera de rango marca el campo');
+ok(norm($sim('sim-amount-error').textContent).includes('30.000.000'),
+   `el mensaje cita el límite real del producto (${norm($sim('sim-amount-error').textContent)})`);
+ok(cuota() === '$ 912.498', 'se conserva la última cuota válida mientras se corrige');
+
+// Cambiar de producto reencaja el monto en el nuevo rango en vez de dejar el error.
+const productSelect = $sim('sim-product');
+productSelect.value = '3';
+productSelect.dispatchEvent(new window.Event('change', { bubbles: true }));
+await tick();
+
+ok($sim('sim-amount').value === '99000000',
+   `el monto cabe en Vivienda y se conserva (${$sim('sim-amount').value})`);
+ok(!$sim('sim-amount').classList.contains('is-invalid'), 'al cambiar de producto desaparece el error');
+ok($sim('sim-term').getAttribute('max') === '240', 'el plazo máximo pasa a ser el de Vivienda');
+
+// Un monto por debajo del mínimo del producto nuevo sí se reencaja hacia arriba.
+await teclear('sim-amount', '1000000');
+ok($sim('sim-amount').classList.contains('is-invalid'),
+   '1.000.000 queda por debajo del mínimo de Vivienda');
+$sim('sim-product').value = '2';
+$sim('sim-product').dispatchEvent(new window.Event('change', { bubbles: true }));
+await tick();
+ok($sim('sim-amount').value === '5000000',
+   `el monto sube al mínimo del producto elegido (${$sim('sim-amount').value})`);
+
+// Tabla de amortización: plegada, se despliega y cambia de detalle.
+ok(document.querySelector('.sim-table') === null, 'la tabla arranca plegada');
+
+await pulsar('[data-action="toggle-schedule"]');
+ok(document.querySelector('.sim-table') !== null, 'la tabla se despliega');
+ok(document.querySelectorAll('.sim-table tbody tr').length === 1,
+   `resumen anual: 1 bloque para 12 meses (${document.querySelectorAll('.sim-table tbody tr').length})`);
+
+await pulsar('[data-action="schedule-mode"][data-mode="monthly"]');
+ok(document.querySelectorAll('.sim-table tbody tr').length === 12,
+   `detalle mensual: 12 filas (${document.querySelectorAll('.sim-table tbody tr').length})`);
+
+const saldoFinal = norm([...document.querySelectorAll('.sim-table tbody tr')].pop()
+  .querySelectorAll('td')[3].textContent);
+ok(saldoFinal === '$ 0', `la última fila deja el saldo en cero (${saldoFinal})`);
+
+// Reiniciar vuelve al estado de partida.
+await pulsar('[data-action="reset-simulation"]');
+ok($sim('sim-product').value === '1', 'reiniciar vuelve al primer producto');
+ok(cuota() === '$ 91.250', `reiniciar restaura la simulación inicial (${cuota()})`);
+ok(document.querySelector('.sim-table') === null, 'reiniciar vuelve a plegar la tabla');
 
 /* --------------------- Búsqueda en vivo --------------------- */
 console.log('\n--- Filtros del simulador ---');

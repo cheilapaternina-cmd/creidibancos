@@ -512,11 +512,7 @@ Las tres → **TODO OK**. Detalle en [19](./19-pruebas-y-verificacion.md).
 
 ## Errores que rompen la arquitectura
 
-Los 14 antipatrones concretos, con su corrección, están en el skill:
-
-[`.claude/skills/arquitectura-hexagonal-vanilla/references/anti-patrones.md`](../.claude/skills/arquitectura-hexagonal-vanilla/references/anti-patrones.md)
-
-Los cuatro más frecuentes:
+Los cuatro antipatrones más frecuentes:
 
 | Error | Corrección |
 |---|---|

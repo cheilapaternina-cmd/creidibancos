@@ -280,3 +280,205 @@
   flex-direction: column;
   gap: var(--space-1);
 }
+
+/* ==========================================================================
+   Simulador — panel de cálculo, resultado y tabla de amortización
+   ========================================================================== */
+
+.panel--simulator {
+  margin-bottom: var(--space-6);
+}
+
+.section__title--sub {
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  margin-top: var(--space-4);
+}
+
+.sim-divider {
+  margin: var(--space-14) 0 var(--space-10);
+  border: 0;
+  border-top: 1px solid var(--surface-border);
+}
+
+/* ----------------------------- Resultado ----------------------------- */
+
+.sim-result {
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  background-image: linear-gradient(
+    135deg,
+    var(--product-grad-from, var(--color-blue-600)),
+    var(--product-grad-to, var(--color-blue-800))
+  );
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  color: var(--color-white);
+}
+
+.sim-result__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.sim-result__icon {
+  font-size: var(--text-4xl);
+  line-height: 1;
+}
+
+.sim-result__title {
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--fw-bold);
+}
+
+.sim-result__meta {
+  font-size: var(--text-sm);
+  opacity: 0.85;
+}
+
+.sim-result__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.sim-result__note {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: var(--text-sm);
+  opacity: 0.9;
+}
+
+.sim-metric {
+  padding: var(--space-4);
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+}
+
+.sim-metric--highlight {
+  background-color: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.sim-metric__label {
+  display: block;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+  margin-bottom: var(--space-1);
+}
+
+.sim-metric__value {
+  display: block;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--fw-bold);
+}
+
+.sim-metric--highlight .sim-metric__value {
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+}
+
+/* -------------------------- Amortización -------------------------- */
+
+.sim-schedule {
+  margin-bottom: var(--space-8);
+}
+
+.sim-schedule__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.sim-schedule__modes {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.btn--system.is-active {
+  color: var(--color-white);
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+
+.btn--system.is-active:hover {
+  background-color: var(--brand-hover);
+}
+
+/* La tabla desborda en móvil: scrollea ella, nunca la página. */
+.sim-schedule__scroll {
+  max-height: 26rem;
+  overflow: auto;
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.sim-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-table__caption {
+  padding: var(--space-4);
+  text-align: left;
+  font-weight: var(--fw-semibold);
+  color: var(--text-strong);
+}
+
+.sim-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-3) var(--space-4);
+  text-align: right;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background-color: var(--color-slate-50);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.sim-table thead th:first-child,
+.sim-table tbody th {
+  text-align: left;
+}
+
+.sim-table tbody th,
+.sim-table tbody td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-slate-100);
+  color: var(--text-body);
+}
+
+.sim-table tbody td {
+  text-align: right;
+}
+
+.sim-table tbody th {
+  font-weight: var(--fw-semibold);
+  color: var(--text-strong);
+}
+
+.sim-table tbody tr:nth-child(even) {
+  background-color: var(--color-slate-50);
+}
+
+.sim-table tbody tr:last-child th,
+.sim-table tbody tr:last-child td {
+  border-bottom: 0;
+}

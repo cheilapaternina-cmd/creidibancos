@@ -1,6 +1,7 @@
 import { ValidationError } from '../errors/ValidationError.js';
 import { CreditProduct } from '../entities/CreditProduct.js';
 import { CreditApplication } from '../entities/CreditApplication.js';
+import { CreditSimulationService } from './CreditSimulationService.js';
 
 /**
  * CreditApplicationPolicy — SERVICIO DE DOMINIO (stateless, puro).
@@ -29,20 +30,15 @@ export class CreditApplicationPolicy {
       return;
     }
 
-    const errors = {};
     const requested = application.requestedCredit;
 
-    if (!product.admitsAmount(requested.amount)) {
-      const min = product.minAmount.amount.toLocaleString('es-CO');
-      const max = product.maxAmount ? product.maxAmount.amount.toLocaleString('es-CO') : 'sin límite';
-      errors.amount =
-        `El monto debe estar entre $${min} y $${max} para ${product.name}.`;
-    }
-
-    if (!product.admitsTerm(requested.term)) {
-      errors.termInMonths =
-        `El plazo máximo para ${product.name} es de ${product.maxTerm.months} meses.`;
-    }
+    // Mismo diagnóstico que usa el simulador: si cambian los límites de un
+    // producto, ambas rutas lo reflejan sin tocar dos sitios.
+    const errors = CreditSimulationService.productFieldErrors(
+      product,
+      requested.amount,
+      requested.term,
+    );
 
     if (Object.keys(errors).length > 0) {
       throw new ValidationError(errors, 'La solicitud no cumple las condiciones del producto.');
@@ -59,14 +55,14 @@ export class CreditApplicationPolicy {
    */
   static assessAffordability(application, product) {
     const { amount, term } = application.requestedCredit;
-    const monthlyRate = product.interestRate.monthlyFraction;
-    const n = term.months;
 
-    // Cuota fija (sistema francés): C = P * i / (1 - (1+i)^-n)
-    const estimatedInstallment =
-      monthlyRate === 0
-        ? amount.amount / n
-        : (amount.amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -n));
+    // La fórmula de la cuota vive en CreditSimulationService y solo ahí: aquí
+    // se consume para que la solicitud y el simulador no puedan discrepar.
+    const estimatedInstallment = CreditSimulationService.monthlyInstallmentAmount(
+      amount.amount,
+      product.interestRate.monthlyFraction,
+      term.months,
+    );
 
     const ceiling = application.employmentInfo.maxAffordableInstallment.amount;
 

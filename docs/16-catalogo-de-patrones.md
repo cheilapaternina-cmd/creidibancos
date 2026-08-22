@@ -429,4 +429,3 @@ pago) justifica un dominio real. Con `AmountRange.overlaps()` y
 
 - [17 — Flujos end-to-end](./17-flujos-end-to-end.md)
 - [18 — Guía de extensión](./18-guia-de-extension.md)
-- [`.claude/skills/arquitectura-hexagonal-vanilla/references/anti-patrones.md`](../.claude/skills/arquitectura-hexagonal-vanilla/references/anti-patrones.md)

@@ -261,6 +261,3 @@ Referencia rápida de qué clase pertenece a qué archivo.
 ## 20.8 Fin de la documentación
 
 Vuelta al [índice maestro](./master.md).
-
-El patrón de este proyecto, empaquetado para reutilizarlo en otros:
-[`.claude/skills/arquitectura-hexagonal-vanilla/SKILL.md`](../.claude/skills/arquitectura-hexagonal-vanilla/SKILL.md)

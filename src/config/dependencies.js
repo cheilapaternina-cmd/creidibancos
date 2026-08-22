@@ -14,10 +14,12 @@ import { IIdGenerator } from '../domain/contracts/IIdGenerator.js';
 import { ILogger } from '../application/contracts/ILogger.js';
 import { INotifier } from '../application/contracts/INotifier.js';
 import { CreditProductMapper } from '../application/mappers/CreditProductMapper.js';
+import { SimulationMapper } from '../application/mappers/SimulationMapper.js';
 import { ListCreditProductsUseCase } from '../application/usecases/ListCreditProductsUseCase.js';
 import { SearchCreditProductsUseCase } from '../application/usecases/SearchCreditProductsUseCase.js';
 import { GetAmountRangeFiltersUseCase } from '../application/usecases/GetAmountRangeFiltersUseCase.js';
 import { GetCreditProductNamesUseCase } from '../application/usecases/GetCreditProductNamesUseCase.js';
+import { SimulateCreditUseCase } from '../application/usecases/SimulateCreditUseCase.js';
 import { SubmitCreditApplicationUseCase } from '../application/usecases/SubmitCreditApplicationUseCase.js';
 
 /* ---------- Infraestructura (adaptadores) ---------- */
@@ -134,6 +136,10 @@ export function buildContainer({ config = AppConfig, rootElement }) {
     new CreditProductMapper({ moneyFormatter: c.resolve('moneyFormatter') }),
   );
 
+  container.register('simulationMapper', (c) =>
+    new SimulationMapper({ moneyFormatter: c.resolve('moneyFormatter') }),
+  );
+
   container.register('listCreditProductsUseCase', (c) =>
     new ListCreditProductsUseCase({
       productRepository: c.resolve('productRepository'),
@@ -157,6 +163,13 @@ export function buildContainer({ config = AppConfig, rootElement }) {
   container.register('getCreditProductNamesUseCase', (c) =>
     new GetCreditProductNamesUseCase({
       productRepository: c.resolve('productRepository'),
+    }),
+  );
+
+  container.register('simulateCreditUseCase', (c) =>
+    new SimulateCreditUseCase({
+      productRepository: c.resolve('productRepository'),
+      simulationMapper: c.resolve('simulationMapper'),
     }),
   );
 
@@ -244,6 +257,8 @@ export function buildContainer({ config = AppConfig, rootElement }) {
       view: c.resolve('simulatorView'),
       renderer: c.resolve('viewRenderer'),
       searchCreditProductsUseCase: c.resolve('searchCreditProductsUseCase'),
+      listCreditProductsUseCase: c.resolve('listCreditProductsUseCase'),
+      simulateCreditUseCase: c.resolve('simulateCreditUseCase'),
       getAmountRangeFiltersUseCase: c.resolve('getAmountRangeFiltersUseCase'),
       amountRangeProvider: c.resolve('amountRangeProvider'),
       notifier: c.resolve('notifier'),

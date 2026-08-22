@@ -33,6 +33,8 @@ const { HistoryRouter } = await import('../src/infrastructure/routing/HistoryRou
 const { InMemoryCreditProductRepository } = await import('../src/infrastructure/persistence/InMemoryCreditProductRepository.js');
 const { IntlMoneyFormatter } = await import('../src/infrastructure/formatters/IntlMoneyFormatter.js');
 const { CreditProductMapper } = await import('../src/application/mappers/CreditProductMapper.js');
+const { SimulationMapper } = await import('../src/application/mappers/SimulationMapper.js');
+const { SimulateCreditUseCase } = await import('../src/application/usecases/SimulateCreditUseCase.js');
 const { Container } = await import('../src/config/Container.js');
 const { html, raw, escapeHtml } = await import('../src/presentation/shared/Html.js');
 
@@ -55,10 +57,56 @@ const products = mapper.toDTOList(await repo.findAll());
 const catalogHtml = new CatalogView({ navbar, footer, productCard, urlBuilder })
   .render({ products });
 
-const simulatorHtml = new SimulatorView({ navbar, footer, productCard, alert }).render({
+// El simulador se pinta con una simulación real: el DTO lo produce el mismo
+// caso de uso que usa la aplicación, no un objeto inventado para la prueba.
+const moneyFormatter = new IntlMoneyFormatter();
+const simulateCredit = new SimulateCreditUseCase({
+  productRepository: repo,
+  simulationMapper: new SimulationMapper({ moneyFormatter }),
+});
+const simulation = (await simulateCredit.execute({
+  productId: 1, amount: 10_000_000, termInMonths: 36,
+})).value;
+
+const simulatorViewModel = {
+  catalog: products,
+  form: { productId: '1', amount: '10000000', termInMonths: '36' },
+  bounds: {
+    minAmount: products[0].minAmount,
+    maxAmount: products[0].maxAmount,
+    maxTermMonths: products[0].maxTermMonths,
+    amountRangeLabel: products[0].amountRangeLabel,
+  },
+  simulation,
+  errors: {},
+  schedule: { open: false, mode: 'yearly' },
   products,
   ranges: [{ index: 0, label: 'Todos los montos' }, { index: 1, label: 'Hasta $5.000.000' }],
   query: '', selectedRangeIndex: 0, matched: 6, total: 6, isFiltered: false,
+};
+
+const newSimulatorView = () => new SimulatorView({ navbar, footer, productCard, alert });
+
+const simulatorHtml = newSimulatorView().render(simulatorViewModel);
+
+const simulatorTableHtml = newSimulatorView().render({
+  ...simulatorViewModel,
+  schedule: { open: true, mode: 'monthly' },
+});
+
+const simulatorYearlyHtml = newSimulatorView().render({
+  ...simulatorViewModel,
+  schedule: { open: true, mode: 'yearly' },
+});
+
+const simulatorErrorHtml = newSimulatorView().render({
+  ...simulatorViewModel,
+  errors: { amount: 'El monto debe estar entre $1.000.000 y $30.000.000 para Crédito Libre Inversión.' },
+});
+
+const simulatorEmptyHtml = newSimulatorView().render({
+  ...simulatorViewModel,
+  simulation: null,
 });
 
 const applicationHtml = new ApplicationView({ navbar, footer }).render({
@@ -140,16 +188,20 @@ ok(catalogHtml.includes('💳') && catalogHtml.includes('🏢'), 'emojis de prod
 console.log('\n--- Simulador (/simulador) ---');
 
 ok(simulatorHtml.includes('Simulador de Crédito'), 'título');
-ok(simulatorHtml.includes('Busca y filtra los productos disponibles según tus necesidades'), 'subtítulo');
+ok(simulatorHtml.includes('Calcula tu cuota mensual y consulta cuánto pagarías en total'),
+   'subtítulo del simulador');
+ok(simulatorHtml.includes('Busca y filtra los productos disponibles según tus necesidades'),
+   'el filtro del catálogo conserva su subtítulo');
 ok(simulatorHtml.includes('Ej: Crédito Vehículo...'), 'placeholder de búsqueda');
 ok(simulatorHtml.includes('🔍 Buscar') && simulatorHtml.includes('Limpiar'), 'botones de filtro');
 ok(simulatorHtml.includes('product-card--compact'), 'tarjetas en variante compacta');
 ok(!simulatorHtml.includes('Requisitos:'), 'variante compacta: sin requisitos');
 ok(!simulatorHtml.includes('Ver detalles'), 'variante compacta: sin "Ver detalles"');
-ok(simulatorHtml.includes('<strong>estáticos</strong>'), 'aviso informativo');
+ok(simulatorHtml.includes('<strong>estático</strong>'), 'aviso informativo');
 ok(!simulatorHtml.includes('results-count'), 'sin contador cuando isFiltered es false');
 
-const filteredHtml = new SimulatorView({ navbar, footer, productCard, alert }).render({
+const filteredHtml = newSimulatorView().render({
+  ...simulatorViewModel,
   products: [products[2]],
   ranges: [{ index: 0, label: 'Todos los montos' }],
   query: 'vivienda', selectedRangeIndex: 0, matched: 1, total: 6, isFiltered: true,
@@ -157,7 +209,8 @@ const filteredHtml = new SimulatorView({ navbar, footer, productCard, alert }).r
 ok(filteredHtml.includes('results-count'), 'contador presente cuando isFiltered es true');
 ok(filteredHtml.includes('value="vivienda"'), 'el texto buscado sobrevive al re-render');
 
-const emptyHtml = new SimulatorView({ navbar, footer, productCard, alert }).render({
+const emptyHtml = newSimulatorView().render({
+  ...simulatorViewModel,
   products: [], ranges: [], query: 'zzz', selectedRangeIndex: 0,
   matched: 0, total: 6, isFiltered: true,
 });
@@ -241,6 +294,65 @@ try {
 } catch (e) {
   ok(/ya estaba registrada/.test(e.message), 'rechaza registro duplicado');
 }
+
+
+console.log('');
+console.log('--- Simulador: cálculo ---');
+
+ok(simulatorHtml.includes('🧮 Simula tu crédito'), 'panel de simulación presente');
+ok(simulatorHtml.includes('name="productId"') &&
+   simulatorHtml.includes('name="amount"') &&
+   simulatorHtml.includes('name="termInMonths"'),
+   'los tres campos del simulador');
+ok(simulatorHtml.includes('🧮 Calcular cuota'), 'botón de cálculo');
+ok(simulatorHtml.includes('min="1000000"') && simulatorHtml.includes('max="30000000"'),
+   'el input de monto se acota con los límites del producto');
+ok(simulatorHtml.includes('max="60"'), 'el input de plazo se acota con el plazo máximo');
+
+ok(simulatorHtml.includes('Cuota mensual') && simulatorHtml.includes(simulation.installmentLabel),
+   `la cuota calculada se pinta (${simulation.installmentLabel})`);
+ok(simulatorHtml.includes('Total en intereses') && simulatorHtml.includes(simulation.totalInterestLabel),
+   'el total de intereses se pinta');
+ok(simulatorHtml.includes('Total a pagar') && simulatorHtml.includes(simulation.totalPaidLabel),
+   'el total a pagar se pinta');
+ok(simulatorHtml.includes(simulation.monthlyRateLabel), 'la tasa mensual equivalente se pinta');
+ok(simulatorHtml.includes('absorbe'), 'se avisa del ajuste por redondeo de la última cuota');
+
+// La vista no debe recalcular: solo puede pintar lo que trae el DTO.
+ok(!/Math\.(pow|round)/.test(simulatorHtml), 'la vista no filtra cálculos al HTML');
+
+console.log('');
+console.log('--- Simulador: tabla de amortización ---');
+
+ok(!simulatorHtml.includes('sim-table'), 'la tabla va plegada por defecto');
+ok(simulatorHtml.includes('▼ Ver') && simulatorHtml.includes('(36 cuotas)'),
+   'el botón anuncia cuántas cuotas hay');
+ok(simulatorHtml.includes('aria-expanded="false"'), 'el botón declara su estado plegado');
+
+ok(simulatorYearlyHtml.includes('Resumen por año'), 'modo anual: encabezado');
+ok((simulatorYearlyHtml.match(/<tbody>[\s\S]*?<\/tbody>/) || [''])[0].split('<tr>').length - 1 === 3,
+   'modo anual: 3 filas para 36 meses');
+ok(simulatorYearlyHtml.includes('Cuotas 1–12'), 'modo anual: rango del primer bloque');
+ok(simulatorYearlyHtml.includes('aria-pressed="true"'), 'modo anual: el botón activo se marca');
+
+ok(simulatorTableHtml.includes('Detalle mes a mes'), 'modo mensual: encabezado');
+ok((simulatorTableHtml.match(/<tbody>[\s\S]*?<\/tbody>/) || [''])[0].split('<tr>').length - 1 === 36,
+   'modo mensual: 36 filas');
+
+console.log('');
+console.log('--- Simulador: errores y estado vacío ---');
+
+ok(simulatorErrorHtml.includes('El monto debe estar entre'),
+   'el error de dominio se pinta bajo su campo');
+ok(simulatorErrorHtml.includes('aria-invalid="true"'), 'el campo con error se marca para lectores');
+ok(simulatorErrorHtml.includes('is-invalid'), 'el campo con error recibe la clase de estado');
+ok(simulatorErrorHtml.includes(simulation.installmentLabel),
+   'con un error de campo se conserva la última cuota válida en pantalla');
+
+ok(simulatorEmptyHtml.includes('Completa el monto y el plazo'),
+   'sin simulación se explica qué falta');
+ok(!simulatorEmptyHtml.includes('sim-table') && !simulatorEmptyHtml.includes('tabla de amortización'),
+   'sin simulación no hay tabla que mostrar');
 
 console.log(fails === 0 ? '\nTODO OK' : `\n${fails} FALLOS`);
 process.exit(fails === 0 ? 0 : 1);

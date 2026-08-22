@@ -415,4 +415,3 @@ son pequeños (ISP) y las dependencias entran por constructor (DIP).
 
 - [06 — Contratos e interfaces](./06-contratos-e-interfaces.md) — cómo funciona `defineContract` por dentro
 - [16 — Catálogo de patrones](./16-catalogo-de-patrones.md)
-- [`.claude/skills/arquitectura-hexagonal-vanilla/references/anti-patrones.md`](../.claude/skills/arquitectura-hexagonal-vanilla/references/anti-patrones.md) — los 14 errores que rompen esto

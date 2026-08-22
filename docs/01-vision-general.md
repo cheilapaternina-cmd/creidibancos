@@ -129,10 +129,6 @@ crediSmart/
 │   ├── master.md
 │   └── 01…20-*.md
 │
-├── .claude/
-│   └── skills/
-│       └── arquitectura-hexagonal-vanilla/    ◄── el patrón como skill
-│
 ├── assets/css/                    7 archivos, cascada explícita
 │   ├── 01-reset.css               Normalización
 │   ├── 02-tokens.css              Design tokens + temas de producto
