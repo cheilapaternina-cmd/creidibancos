@@ -11,6 +11,10 @@ desktop.ini
 .vscode/
 *.swp
 
+# Python del generador del .docx
+__pycache__/
+*.pyc
+
 # Logs y temporales
 *.log
 *.tmp

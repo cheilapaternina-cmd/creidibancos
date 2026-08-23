@@ -136,10 +136,10 @@ def chart_plazos():
 # ---------------------------------------------------------------- 4. capas (donut)
 def chart_capas():
     fig, ax = plt.subplots(figsize=(4.8, 3.3))
-    labels = [u'Dominio\n23 archivos', u'Presentación\n22 archivos',
-              u'Aplicación\n12 archivos', u'Infraestructura\n11 archivos',
+    labels = [u'Dominio\n26 archivos', u'Presentación\n22 archivos',
+              u'Aplicación\n15 archivos', u'Infraestructura\n11 archivos',
               u'Configuración\n5 archivos']
-    sizes = [23, 22, 12, 11, 5]
+    sizes = [26, 22, 15, 11, 5]
     colors = [BLUE700, EMERALD, VIOLET, AMBER, GRAY500]
     wedges, texts, autotexts = ax.pie(
         sizes, labels=labels, colors=colors, startangle=90,
@@ -150,7 +150,7 @@ def chart_capas():
         t.set_color('white')
         t.set_fontweight('bold')
         t.set_fontsize(8)
-    ax.text(0, 0, u'73\narchivos\nJS', ha='center', va='center',
+    ax.text(0, 0, u'79\narchivos\nJS', ha='center', va='center',
             fontsize=11, fontweight='bold', color=BLUE700)
     ax.set_title(u'Distribución del código fuente por capa',
                  fontsize=10.5, fontweight='bold', color=BLUE700, pad=6)
@@ -163,19 +163,19 @@ def chart_css():
     fig, ax = plt.subplots(figsize=(6.4, 2.7))
     files = ['01-reset', '02-tokens', '03-base', '04-layout',
              '05-components', '06-pages', '07-responsive']
-    lines = [175, 197, 81, 98, 541, 282, 78]
+    lines = [175, 211, 81, 98, 541, 484, 91]
     colors = [GRAY500, BLUE700, BLUE600, '#3b82f6', EMERALD, VIOLET, AMBER]
     bars = ax.bar(files, lines, color=colors, width=0.6, zorder=3)
     for b, v in zip(bars, lines):
         ax.text(b.get_x() + b.get_width() / 2, b.get_height() + 12, str(v),
                 ha='center', fontsize=8.5, fontweight='bold', color=GRAY700)
-    ax.set_ylim(0, 620)
+    ax.set_ylim(0, 640)
     ax.set_ylabel(u'Líneas de CSS')
     ax.yaxis.grid(True, color=GRAY100, zorder=0)
     ax.set_axisbelow(True)
     strip_axes(ax)
     plt.setp(ax.get_xticklabels(), rotation=18, ha='right', fontsize=8)
-    ax.set_title(u'Cascada de estilos: 1.452 líneas en 7 archivos por especificidad creciente',
+    ax.set_title(u'Cascada de estilos: 1.681 líneas en 7 archivos por especificidad creciente',
                  fontsize=10, fontweight='bold', color=BLUE700, loc='left', pad=10)
     fig.savefig(os.path.join(OUT, 'chart-css.png'))
     plt.close(fig)
@@ -236,9 +236,9 @@ def chart_hexagono():
     hexagon(0.62, facecolor=BLUE100, edgecolor=BLUE700, linewidth=1.6, zorder=3)
     ax.text(0, 0.12, u'DOMINIO', ha='center', fontsize=10, fontweight='bold',
             color=BLUE700, zorder=5)
-    ax.text(0, -0.12, u'2 entidades · 8 value objects\n1 servicio · 1 criterio · 7 puertos',
+    ax.text(0, -0.12, u'2 entidades · 10 value objects\n2 servicios · 1 criterio · 7 puertos',
             ha='center', fontsize=6.8, color=GRAY700, zorder=5)
-    ax.text(0, 0.70, u'APLICACIÓN · 5 casos de uso', ha='center', fontsize=8,
+    ax.text(0, 0.70, u'APLICACIÓN · 6 casos de uso', ha='center', fontsize=8,
             fontweight='bold', color=BLUE600, zorder=6,
             bbox=dict(boxstyle='round,pad=0.20', facecolor=BLUE50,
                       edgecolor='none'))

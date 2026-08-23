@@ -106,23 +106,27 @@ add_table(
       u'SimulatorView + SearchCreditProductsUseCase + CreditProduct.matchesName()'],
      [u'RF-03', u'Filtrar productos por rango de monto (5 rangos predefinidos).',
       u'GetAmountRangeFiltersUseCase + AmountRange.overlaps()'],
-     [u'RF-04', u'Capturar una solicitud de crédito con datos personales, del '
+     [u'RF-04', u'Simular un crédito: dado un producto, un monto y un plazo, calcular '
+                u'la cuota mensual, el total de intereses, el total a pagar y la tabla '
+                u'de amortización mes a mes.',
+      u'SimulatorView + SimulateCreditUseCase + CreditSimulationService'],
+     [u'RF-05', u'Capturar una solicitud de crédito con datos personales, del '
                 u'crédito y laborales (11 campos en 3 secciones).',
       u'ApplicationView + ApplicationController'],
-     [u'RF-05', u'Validar la solicitud: formato de cada campo y coherencia con el '
+     [u'RF-06', u'Validar la solicitud: formato de cada campo y coherencia con el '
                 u'producto elegido (monto y plazo admitidos).',
       u'Applicant · RequestedCredit · EmploymentInfo · CreditApplicationPolicy'],
-     [u'RF-06', u'Estimar la cuota mensual y evaluar la capacidad de pago '
+     [u'RF-07', u'Estimar la cuota mensual y evaluar la capacidad de pago '
                 u'(cuota ≤ 40 % del ingreso declarado).',
       u'CreditApplicationPolicy.assessAffordability()'],
-     [u'RF-07', u'Radicar la solicitud con número de referencia y persistirla.',
+     [u'RF-08', u'Radicar la solicitud con número de referencia y persistirla.',
       u'SubmitCreditApplicationUseCase + LocalStorageCreditApplicationRepository'],
-     [u'RF-08', u'Navegar entre las tres pantallas sin recargar la página y con '
+     [u'RF-09', u'Navegar entre las tres pantallas sin recargar la página y con '
                 u'URL limpias compartibles.',
       u'HistoryRouter + UrlBuilder + NavbarComponent'],
-     [u'RF-09', u'Mostrar una pantalla 404 para rutas inexistentes.',
+     [u'RF-10', u'Mostrar una pantalla 404 para rutas inexistentes.',
       u'NotFoundView + NotFoundController'],
-     [u'RF-10', u'Notificar al usuario el resultado de sus acciones.',
+     [u'RF-11', u'Notificar al usuario el resultado de sus acciones.',
       u'INotifier → ToastNotifier']],
     widths=[1.6, 7.4, 7.0], align_center_cols=(0,))
 cap(u'Requerimientos funcionales y su punto de implementación', kind=u'Tabla')
@@ -147,7 +151,7 @@ add_table(
      [u'Verificabilidad', u'Tres suites de pruebas ejecutables con Node, sin '
                           u'framework de test.', u'tests/01, tests/02, tests/03'],
      [u'Rendimiento', u'Sin fuentes web, sin imágenes de producto (emojis), '
-                      u'1.452 líneas de CSS frente a 70 KB de Tailwind del original.',
+                      u'1.681 líneas de CSS frente a 70 KB de Tailwind del original.',
       u'assets/css/'],
      [u'Portabilidad', u'La ruta base se autodetecta: funciona en la raíz del dominio '
                        u'o en un subdirectorio.', u'UrlBuilder.detectBasePath()']],
@@ -166,7 +170,7 @@ para(u'La aplicación es una SPA (Single Page Application) sin framework: el nav
 
 boxes_row([(u'NAVEGADOR', '6B7280'), (u'index.html\n(shell + CSS)', BRAND),
            (u'src/main.js\n(arranque)', VIOLET),
-           (u'dependencies.js\n(32 dependencias)', EMERALD),
+           (u'dependencies.js\n(34 dependencias)', EMERALD),
            (u'HistoryRouter\n(3 rutas + 404)', AMBER)])
 cap(u'Cadena de arranque: del documento HTML al router de la aplicación')
 
@@ -177,29 +181,30 @@ figure('chart-capas-dependencia.png',
 h2(u'4.1 Cifras de la solución')
 add_table(
     [u'Métrica', u'Valor', u'Métrica', u'Valor'],
-    [[u'Archivos JavaScript', u'73', u'Líneas de JavaScript', u'5.308'],
-     [u'Archivos CSS', u'7 (cascada explícita)', u'Líneas de CSS', u'1.452'],
+    [[u'Archivos JavaScript', u'79', u'Líneas de JavaScript', u'6.881'],
+     [u'Archivos CSS', u'7 (cascada explícita)', u'Líneas de CSS', u'1.681'],
      [u'Capas', u'4 + configuración', u'Contratos (interfaces)', u'12'],
-     [u'Entidades', u'2', u'Value objects', u'8'],
-     [u'Casos de uso', u'5 (4 consultas, 1 comando)', u'Servicios de dominio', u'1'],
+     [u'Entidades', u'2', u'Value objects', u'10'],
+     [u'Casos de uso', u'6 (5 consultas, 1 comando)', u'Servicios de dominio', u'2'],
      [u'Vistas', u'6', u'Controladores', u'4 + 1 decorador'],
      [u'Componentes reutilizables', u'4', u'Adaptadores de infraestructura', u'11'],
-     [u'Dependencias del contenedor', u'32', u'Suites de pruebas', u'3 (todas en verde)'],
-     [u'Productos de crédito', u'6', u'Rutas', u'3 + comodín 404']],
+     [u'Dependencias del contenedor', u'34', u'Suites de pruebas', u'3 (todas en verde)'],
+     [u'Aserciones de prueba', u'240', u'Productos de crédito', u'6'],
+     [u'Rutas', u'3 + comodín 404', u'Dependencias de runtime', u'0']],
     widths=[4.5, 3.5, 4.5, 3.5], align_center_cols=(1, 3))
 cap(u'Dimensiones del sistema', kind=u'Tabla')
 
 figure('chart-capas.png',
-       u'Distribución de los 73 archivos JavaScript entre las capas', 11.5)
+       u'Distribución de los 79 archivos JavaScript entre las capas', 11.5)
 
 h2(u'4.2 Responsabilidad de cada capa')
 add_table(
     [u'Capa', u'Responde a', u'Contiene', u'Puede importar'],
     [[u'Dominio', u'¿Qué es verdad siempre, sin navegador ni base de datos?',
-      u'Entidades, value objects, servicios, criterios, errores y 7 puertos',
+      u'2 entidades, 10 value objects, 2 servicios, criterios, errores y 7 puertos',
       u'Nada fuera de sí misma'],
      [u'Aplicación', u'¿Qué debe poder hacer el sistema?',
-      u'5 casos de uso, DTOs, mappers, Result y 3 puertos',
+      u'6 casos de uso, DTOs, mappers, Result y 3 puertos',
       u'Solo dominio'],
      [u'Infraestructura', u'¿Con qué tecnología concreta se hace?',
       u'11 adaptadores: memoria, localStorage, Intl, crypto, Date, consola, DOM, '
@@ -283,7 +288,7 @@ code_block([
     u"// Quien la consume la exige en su constructor",
     u"assertImplements(instance, IThing);   // ContractViolationError si falta un método",
 ], caption=u'Declaración, implementación y verificación de un contrato')
-para(u'Al arrancar, main.js llama a container.eagerResolveAll(), que construye las 32 '
+para(u'Al arrancar, main.js llama a container.eagerResolveAll(), que construye las 34 '
      u'dependencias y ejecuta todas las verificaciones. Consecuencia práctica: un '
      u'contrato roto impide que cargue la página, en lugar de fallar a mitad de una '
      u'navegación. Los métodos no implementados lanzan NotImplementedError al '
@@ -326,7 +331,7 @@ add_table(
       u'class="navbar"'],
      [u'Cambiar el fondo de la navbar', u'Editar la clase en cada página que la repite',
       u'Una línea en 05-components.css'],
-     [u'Tamaño', u'70 KB generados', u'1.452 líneas en 7 archivos, sin build'],
+     [u'Tamaño', u'70 KB generados', u'1.681 líneas en 7 archivos, sin build'],
      [u'Dependencias', u'PostCSS + Tailwind + configuración', u'Ninguna'],
      [u'Qué demuestra', u'Uso de una librería de utilidades',
       u'Dominio de la cascada, Grid, Flexbox y media queries —lo que evalúa la rúbrica']],
@@ -368,7 +373,7 @@ code_block([
     u'├── manifest.json               Metadatos PWA (nombre, iconos, color de tema)',
     u'├── .htaccess                   Reescritura SPA, MIME, caché y cabeceras',
     u'├── README.md                   Puesta en marcha',
-    u'├── assets/css/                 7 archivos en cascada (1.452 líneas)',
+    u'├── assets/css/                 7 archivos en cascada (1.681 líneas)',
     u'│   ├── 01-reset.css            Normalización',
     u'│   ├── 02-tokens.css           Variables: paleta, tipografía, sombras, radios',
     u'│   ├── 03-base.css             Elementos base, foco, spinner, sr-only',
@@ -383,12 +388,12 @@ code_block([
     u'│   │   ├── valueobjects/       Money · InterestRate · Term · AmountRange ·',
     u'│   │   │                       ProductTheme · Applicant · RequestedCredit ·',
     u'│   │   │                       EmploymentInfo',
-    u'│   │   ├── services/           CreditApplicationPolicy',
+    u'│   │   ├── services/           CreditApplicationPolicy · CreditSimulationService',
     u'│   │   ├── criteria/           ProductSearchCriteria',
     u'│   │   ├── contracts/          7 puertos + Contract.js',
     u'│   │   └── errors/             DomainError · ValidationError · …',
     u'│   ├── application/            CASOS DE USO — 12 archivos',
-    u'│   │   ├── usecases/           5 casos de uso',
+    u'│   │   ├── usecases/           6 casos de uso',
     u'│   │   ├── dto/ · mappers/     CreditProductDTO · 2 mappers',
     u'│   │   ├── contracts/          IUseCase · ILogger · INotifier',
     u'│   │   └── shared/             Result',
@@ -406,7 +411,7 @@ code_block([
     u'│   │   ├── contracts/          IView · IController · IRouter',
     u'│   │   └── shared/             Html · UrlBuilder · ViewRenderer',
     u'│   └── config/                 ENSAMBLAJE — 5 archivos',
-    u'│       ├── dependencies.js     Composition Root: 32 registros',
+    u'│       ├── dependencies.js     Composition Root: 34 registros',
     u'│       ├── Container.js        Contenedor con detección de ciclos',
     u'│       ├── routes.js           Tabla de rutas (sin imports)',
     u'│       └── AppConfig.js        Parámetros: locale, moneda, log, toasts',
@@ -470,9 +475,15 @@ add_table(
      [u'RequestedCredit', u'Datos del crédito pedido',
       u'Tipo seleccionado, monto > 0, plazo entero > 0, destino ≥ 10 caracteres'],
      [u'EmploymentInfo', u'Datos laborales',
-      u'Empresa y cargo no vacíos, ingresos > 0']],
+      u'Empresa y cargo no vacíos, ingresos > 0'],
+     [u'Installment', u'Una cuota de la tabla de amortización',
+      u'Número entero positivo; los cuatro importes son Money; la cuota es exactamente '
+      u'interés más capital'],
+     [u'AmortizationPlan', u'El plan de pagos completo de una simulación',
+      u'Una cuota por cada mes del plazo, numeradas sin huecos; la suma de los abonos a '
+      u'capital es igual al capital prestado; la última cuota deja el saldo en cero']],
     widths=[3.0, 4.4, 9.2])
-cap(u'Los ocho value objects y sus invariantes', kind=u'Tabla')
+cap(u'Los diez value objects y sus invariantes', kind=u'Tabla')
 
 code_block([
     u'// Sin value objects: los tres errores pasan desapercibidos',
@@ -488,13 +499,17 @@ code_block([
     u'});',
 ], caption=u'Por qué el dominio no usa primitivos sueltos')
 
-h2(u'7.3 Servicio de dominio, criterio y errores')
+h2(u'7.3 Servicios de dominio, criterio y errores')
 add_table(
     [u'Artefacto', u'Tipo', u'Qué resuelve'],
     [[u'CreditApplicationPolicy', u'Servicio de dominio (sin estado, puro)',
       u'Reglas que cruzan dos entidades: que el monto y el plazo pedidos estén dentro '
       u'de lo que admite el producto, y que la cuota estimada no supere el 40 % del '
       u'ingreso declarado'],
+     [u'CreditSimulationService', u'Servicio de dominio (sin estado, puro)',
+      u'Amortización por el sistema francés: cruza producto, monto y plazo para '
+      u'producir la cuota fija y la tabla mes a mes. Es el único lugar del proyecto '
+      u'donde vive la fórmula de la cuota'],
      [u'ProductSearchCriteria', u'Especificación',
       u'Encapsula «qué se considera una coincidencia»: texto en nombre o descripción, '
       u'y solapamiento de rangos de monto'],
@@ -511,19 +526,44 @@ add_table(
     widths=[3.8, 3.6, 9.2])
 cap(u'Servicios, criterios y jerarquía de errores', kind=u'Tabla')
 
-para(u'La cuota mensual se estima con el sistema de amortización francés, la fórmula '
-     u'estándar de cuota fija:')
+para(u'La cuota mensual se calcula con el sistema de amortización francés, la '
+     u'fórmula estándar de cuota fija. Vive en un solo lugar y tiene dos '
+     u'consumidores: el simulador y el estudio de capacidad de pago de una '
+     u'solicitud. Duplicarla habría permitido que las dos cifras se separaran con '
+     u'cualquier ajuste posterior.')
 code_block([
-    u'// domain/services/CreditApplicationPolicy.js',
+    u'// domain/services/CreditSimulationService.js',
     u'//   C = P · i / (1 − (1+i)^−n)',
-    u'//   P = monto solicitado   i = tasa mensual   n = número de cuotas',
-    u'const cuota = tasaMensual === 0',
-    u'  ? monto / n',
-    u'  : (monto * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -n));',
+    u'//   P = capital solicitado   i = tasa mensual   n = número de cuotas',
+    u'static monthlyInstallmentAmount(principal, monthlyRate, months) {',
+    u'  if (monthlyRate === 0) return principal / months;   // evita dividir por cero',
+    u'  return (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));',
+    u'}',
     u'',
-    u'// Regla de capacidad de pago: la cuota no debe superar el 40 % del ingreso',
+    u'// domain/services/CreditApplicationPolicy.js — la consume, no la repite',
+    u'const cuota = CreditSimulationService.monthlyInstallmentAmount(',
+    u'  amount.amount, product.interestRate.monthlyFraction, term.months);',
     u'return { affordable: cuota <= techo, estimatedInstallment: Math.round(cuota) };',
-], caption=u'Estimación de la cuota y evaluación de la capacidad de pago')
+], caption=u'La fórmula de la cuota, declarada una vez y consumida dos veces')
+
+para(u'La tabla de amortización se construye sobre esa cuota, mes a mes: el interés '
+     u'del período se calcula sobre el saldo vivo y el resto abona capital, de modo '
+     u'que el interés decrece y el abono crece. Como los importes se redondean al '
+     u'peso, la última cuota abona todo el saldo restante en lugar de una cifra fija: '
+     u'absorbe el residuo del redondeo, igual que hace la banca. AmortizationPlan '
+     u'verifica al construirse que la suma de los abonos sea exactamente el capital '
+     u'prestado y que el saldo final sea cero.')
+
+add_table(
+    [u'Simulación verificada', u'Cuota fija', u'Última cuota', u'Total intereses', u'Saldo final'],
+    [[u'Libre Inversión · $10.000.000 · 36 meses · 18,5 % E.A.',
+      u'$357.000', u'$356.984', u'$2.851.984', u'$0'],
+     [u'Vivienda · $300.000.000 · 240 meses · 11,8 % E.A.',
+      u'$3.138.761', u'$3.139.123', u'$453.303.002', u'$0']],
+    widths=[6.6, 2.6, 2.6, 3.0, 1.8], align_center_cols=(1, 2, 3, 4))
+cap(u'Resultados comprobados en la suite de pruebas. El caso de 240 meses es el que '
+    u'demuestra que el reparto del redondeo cierra: a veinte años de cuotas, el '
+    u'capital sigue cuadrando al peso', kind=u'Tabla')
 
 h2(u'7.4 Los puertos del dominio')
 add_table(
@@ -563,11 +603,13 @@ add_table(
       u'Result<[{ index, label }]> — las 5 opciones del filtro'],
      [u'GetCreditProductNamesUseCase', u'Consulta', u'productRepository',
       u'Result<string[]> — alimenta el <select> del formulario'],
+     [u'SimulateCreditUseCase', u'Consulta', u'productRepository, simulationMapper',
+      u'Result<SimulationDTO> — cuota, totales y tabla de amortización'],
      [u'SubmitCreditApplicationUseCase', u'Comando',
       u'applicationRepository, productRepository, clock, logger',
       u'Result<{ reference, status, applicantFirstName, affordability }>']],
     widths=[4.6, 2.0, 4.4, 6.0])
-cap(u'Los cinco casos de uso: cuatro consultas y un comando', kind=u'Tabla')
+cap(u'Los seis casos de uso: cinco consultas y un comando', kind=u'Tabla')
 
 callout(u'El <select> del formulario no duplica el catálogo',
         u'La lista de tipos de crédito del formulario no está escrita a mano: la '
@@ -702,8 +744,8 @@ h2(u'11.1 Rutas expuestas al usuario')
 add_table(
     [u'Ruta', u'Método', u'Pantalla', u'Título del documento', u'Clave del controlador'],
     [[u'/', u'GET', u'Catálogo de créditos', u'CreditSmart — Catálogo', u'catalogController'],
-     [u'/simulador', u'GET', u'Búsqueda y filtros', u'CreditSmart — Simulador',
-      u'simulatorController'],
+     [u'/simulador', u'GET', u'Simulador de crédito y catálogo filtrable',
+      u'CreditSmart — Simulador', u'simulatorController'],
      [u'/solicitar', u'GET', u'Formulario de solicitud', u'CreditSmart — Solicitar',
       u'applicationController'],
      [u'* (comodín)', u'GET', u'Página 404', u'CreditSmart — Página no encontrada',
@@ -775,9 +817,9 @@ diagram([
     ('C', u'main.js → bootstrap()',
      u'Localiza #root; si no existe, muestra «No se pudo iniciar la aplicación»'),
     ('C', u'buildContainer({ config, rootElement })',
-     u'Registra 32 factorías perezosas: todavía no se construye nada'),
+     u'Registra 34 factorías perezosas: todavía no se construye nada'),
     ('C', u'container.eagerResolveAll()',
-     u'Construye las 32 dependencias y verifica cada adaptador contra su puerto con '
+     u'Construye las 34 dependencias y verifica cada adaptador contra su puerto con '
      u'assertImplements. Un contrato roto falla AQUÍ, no a mitad de una navegación'),
     ('C', u'Registro de rutas',
      u'Cada entrada de ROUTE_TABLE se envuelve en DocumentTitleController y se '
@@ -833,7 +875,41 @@ para(u'Ejemplo verificado del filtro por rango «Hasta $5.000.000»: de los seis
      u'y Empresarial (desde $10 M) quedan fuera. La pantalla informa «Mostrando 4 de '
      u'6 productos».')
 
-h2(u'12.4 Radicar una solicitud de crédito')
+h2(u'12.4 Simular un crédito')
+diagram([
+    ('P', u'El usuario teclea el monto',
+     u'La vista lee el formulario y llama handlers.onSimulate({ amount, termInMonths }): '
+     u'transmite la intención y el campo que tiene el foco, nada más'),
+    ('P', u'SimulatorController.onSimulate()',
+     u'Actualiza su estado de interfaz y pide una simulación nueva. No calcula nada: '
+     u'no hay una sola operación aritmética sobre dinero en el controlador'),
+    ('A', u'SimulateCreditUseCase.execute()',
+     u'Busca el producto por id, convierte el texto del formulario en Money y Term '
+     u'acumulando los errores de forma, y delega el cálculo'),
+    ('D', u'CreditSimulationService.simulate()',
+     u'Comprueba que el producto admita ese monto y ese plazo, obtiene la tasa mensual '
+     u'equivalente y construye la tabla mes a mes con la cuota del sistema francés'),
+    ('D', u'AmortizationPlan',
+     u'Verifica las cuatro invariantes del plan: una cuota por mes, numeración '
+     u'correlativa, capital cuadrado al peso y saldo final en cero'),
+    ('A', u'SimulationMapper.toDTO()',
+     u'Aplana el plan en un objeto plano y congelado, con los importes ya formateados '
+     u'en pesos colombianos por IMoneyFormatter'),
+    ('P', u'update() en lugar de present()',
+     u'Se repintan la cuota, los totales y la tabla; el foco vuelve al campo que se '
+     u'estaba tecleando y la página no salta al inicio'),
+])
+cap(u'Flujo 4: el cálculo financiero ocurre en el dominio, tres capas por debajo del '
+    u'input; la vista solo interpola texto ya formateado')
+
+para(u'Si el monto se sale del rango del producto, el dominio lanza un error por campo '
+     u'que el caso de uso devuelve como valor dentro del Result. La vista lo pinta bajo '
+     u'el control correspondiente y —decisión deliberada— conserva en pantalla la '
+     u'última cuota válida mientras el usuario corrige: borrarla haría parpadear el '
+     u'panel en cada tecla intermedia de un número largo.')
+
+page_break()
+h2(u'12.5 Radicar una solicitud de crédito')
 diagram([
     ('P', u'El usuario envía el formulario',
      u'La vista entrega los 11 campos crudos al controlador, sin interpretarlos'),
@@ -857,7 +933,7 @@ diagram([
      u'Se muestra el número de radicación y un aviso accesible; si hubo errores, cada '
      u'mensaje aparece bajo su campo'),
 ])
-cap(u'Flujo 4: validación, política de dominio, radicación y persistencia')
+cap(u'Flujo 5: validación, política de dominio, radicación y persistencia')
 
 # ============================================================== 13. CATALOGO
 page_break()
@@ -949,7 +1025,7 @@ add_table(
 cap(u'Los once campos del formulario y sus reglas de validación', kind=u'Tabla')
 
 h2(u'14.2 Diseño CSS3 y presentación visual')
-figure('chart-css.png', u'Las 1.452 líneas de CSS repartidas en siete archivos que se '
+figure('chart-css.png', u'Las 1.681 líneas de CSS repartidas en siete archivos que se '
        u'cargan por especificidad creciente', 16.0)
 para(u'La cascada explícita tiene una consecuencia medible: el proyecto no necesita un '
      u'solo !important —salvo en las reglas de impresión, donde es la práctica '
@@ -1057,25 +1133,30 @@ h2(u'15.2 Suites de pruebas')
 add_table(
     [u'Suite', u'Qué verifica', u'Comando', u'Resultado'],
     [[u'01-domain-application.mjs',
-      u'Invariantes de value objects y entidades, política de dominio, criterios de '
-      u'búsqueda, casos de uso y Result',
+      u'85 comprobaciones: invariantes de value objects y entidades, servicios de '
+      u'dominio, amortización, criterios de búsqueda, los seis casos de uso y Result',
       u'node tests/01-domain-application.mjs', u'TODO OK'],
      [u'02-presentation-render.mjs',
-      u'Que las vistas generen el HTML esperado, el escapado de datos y la detección '
-      u'de dependencias circulares del contenedor',
+      u'89 comprobaciones: que las vistas generen el HTML esperado, el simulador con '
+      u'su tabla y sus errores, el escapado de datos y la detección de dependencias '
+      u'circulares del contenedor',
       u'node tests/02-presentation-render.mjs', u'TODO OK'],
      [u'03-boot-jsdom.mjs',
-      u'Arranque completo con jsdom: resolución de las 32 dependencias, navegación '
-      u'entre rutas, filtros del simulador, foco tras el re-render y pantalla 404',
+      u'66 comprobaciones: arranque completo con jsdom, resolución de las 34 '
+      u'dependencias, navegación entre rutas, simulador y filtros en vivo, foco tras '
+      u'el re-render y pantalla 404',
       u'node tests/03-boot-jsdom.mjs', u'TODO OK']],
     widths=[4.6, 6.4, 3.4, 1.6], align_center_cols=(3,))
-cap(u'Las tres suites y su resultado en la última ejecución', kind=u'Tabla')
+cap(u'Las tres suites y su resultado en la última ejecución: 240 aserciones en verde',
+    kind=u'Tabla')
 
 para(u'Ejemplos de comprobaciones que imprime la ejecución: «monto fuera de rango '
      u'rechazado por CreditApplicationPolicy» con el mensaje «El monto debe estar entre '
-     u'$5.000.000 y $120.000.000 para Crédito Vehículo»; «búsqueda "vivienda" → 1 '
-     u'tarjeta»; «rango "Hasta 5M" → 3 tarjetas»; «foco conservado tras re-render»; '
-     u'«contenedor resuelto (32 dependencias)». La tercera suite requiere jsdom: '
+     u'$5.000.000 y $120.000.000 para Crédito Vehículo»; «cuota fija esperada $357.000»; '
+     u'«la suma de los abonos a capital es exactamente el capital prestado»; «a 240 '
+     u'meses el saldo cierra en cero»; «recalcula al teclear el monto ($ 912.498)»; '
+     u'«búsqueda "vivienda" → 1 tarjeta»; «foco conservado tras re-render»; '
+     u'«contenedor resuelto (34 dependencias)». La tercera suite requiere jsdom: '
      u'npm install jsdom --no-save.')
 
 h2(u'15.3 Cómo ejecutar el proyecto')
@@ -1102,7 +1183,7 @@ add_table(
       u'[     ]'],
      [u'Diseño CSS3 y presentación visual', u'20',
       u'Paleta en variables (02-tokens.css), Grid y Flexbox, hover, transiciones, '
-      u'sombras y degradados; 1.452 líneas organizadas en 7 archivos sin un solo '
+      u'sombras y degradados; 1.681 líneas organizadas en 7 archivos sin un solo '
       u'!important',
       u'[     ]'],
      [u'Responsive design', u'10',
@@ -1269,7 +1350,7 @@ para(u'Las consecuencias concretas de esa separación son verificables, no teór
      u'clics después.')
 para(u'El coste de la decisión también es honesto: hubo que escribir a mano el router, '
      u'el mecanismo de render, el contenedor de dependencias y el sistema de contratos '
-     u'—en total 73 archivos y 5.308 líneas de JavaScript— donde un framework habría '
+     u'—en total 79 archivos y 6.881 líneas de JavaScript— donde un framework habría '
      u'resuelto parte de eso. En el contexto de esta actividad ese coste es la '
      u'evidencia del aprendizaje: cada pieza es propia y explicable.')
 para(u'Los dos puntos abiertos frente al enunciado quedaron cerrados. El catálogo ya '

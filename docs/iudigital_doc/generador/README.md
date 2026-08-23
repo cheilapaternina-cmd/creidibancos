@@ -2,7 +2,7 @@
 
 Scripts que producen **`../CreditSmart_Arquitectura_de_la_Solucion_generado.docx`**:
 el documento de arquitectura de CreditSmart para la actividad de la IU Digital
-(44 páginas, 21 figuras, 32 tablas).
+(46 páginas, 22 figuras, 33 tablas).
 
 El documento no se escribe a mano: se genera desde estos scripts para que los
 datos que cita —número de productos, tasas, plazos, conteos de archivos y de
