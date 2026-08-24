@@ -8,9 +8,9 @@
 .hero {
   background-image: linear-gradient(
     to bottom right,
-    var(--color-blue-700),
-    var(--color-blue-800) 50%,
-    var(--color-blue-900)
+    #0a1628,
+    #0f1f3d 50%,
+    #16294f
   );
   color: var(--color-white);
   padding: var(--space-16) var(--space-4);
@@ -31,7 +31,7 @@
 }
 
 .hero__title-accent {
-  color: var(--color-emerald-400);
+  color: #38bdf8;
 }
 
 .hero__subtitle {
