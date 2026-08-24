@@ -14,9 +14,9 @@ import { html, classNames } from '../shared/Html.js';
  */
 export class FooterComponent {
   static COMPANY = 'CreditSmart';
-  static RIGHTS_SHORT = '© 2025 Todos los derechos reservados';
-  static RIGHTS_LONG =
-    '© 2025 Todos los derechos reservados · Plataforma de solicitudes de crédito en línea';
+  static RIGHTS_SHORT = '© 2026';
+ static RIGHTS_LONG =
+  '© 2026 · Plataforma de solicitudes de crédito en línea';
 
   /**
    * @param {{ variant?: 'catalog'|'compact' }} [props]
