@@ -34,6 +34,8 @@
   font-weight: var(--fw-black);
   color: var(--brand);
   letter-spacing: -0.025em;
+
+   text-transform: uppercase;
 }
 
 .brand__name-accent {
@@ -243,6 +245,7 @@
   font-weight: var(--fw-bold);
   font-size: var(--text-lg);
   line-height: 1.25;
+     text-transform: uppercase;
 }
 
 .product-card--compact .product-card__name {
