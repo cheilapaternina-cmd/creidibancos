@@ -38,7 +38,6 @@ export class NavbarComponent {
         <div class="navbar__inner container container--7xl">
           <div class="brand">
             <span class="brand__name">Credit<span class="brand__name-accent">Smart</span></span>
-            <span class="brand__tagline">by FinTech Solutions</span>
           </div>
           <div class="navbar__links">
             ${raw(items.map((item) => this.#link(item, activePath)).join(''))}
